@@ -197,14 +197,49 @@ function findMatch(d: AppData, id: ID): Match | undefined {
   return d.matches.find((m) => m.id === id);
 }
 
-async function after<T>(promise: PromiseLike<{ data: T; error: { message: string; code?: string } | null }>) {
+type Result<T> = PromiseLike<{ data: T; error: { message: string; code?: string } | null }>;
+
+/**
+ * Server write whose effect is already on screen (optimistic). The full reload
+ * runs in the background; on error it restores the server state and throws.
+ */
+async function after<T>(promise: Result<T>) {
   const { data, error } = await promise;
   if (error) {
     await load().catch(() => {});
     fail(error);
   }
+  scheduleReload();
+  return data;
+}
+
+/** For creations: the next screen needs the new row, so wait for the reload. */
+async function afterAndLoad<T>(promise: Result<T>) {
+  const { data, error } = await promise;
+  fail(error);
   await load();
   return data;
+}
+
+function patchSession(id: ID, recipe: (s: Session) => void) {
+  optimistic((d) => {
+    const s = d.sessions.find((x) => x.id === id);
+    if (s) recipe(s);
+  });
+}
+
+function patchMatch(id: ID, recipe: (m: Match) => void) {
+  optimistic((d) => {
+    const m = findMatch(d, id);
+    if (m) recipe(m);
+  });
+}
+
+function patchGroup(id: ID, recipe: (g: AppData['groups'][number]) => void) {
+  optimistic((d) => {
+    const g = d.groups.find((x) => x.id === id);
+    if (g) recipe(g);
+  });
 }
 
 // ───────────────────────────── Actions ─────────────────────────────
@@ -235,20 +270,25 @@ export const repo = {
   },
 
   async renamePlayer(playerId: ID, name: string) {
+    optimistic((d) => {
+      const p = d.players.find((x) => x.id === playerId);
+      if (p) p.name = name.trim();
+    });
     await after(supabase.from('profiles').update({ name: name.trim() }).eq('id', playerId));
   },
 
   async createGroup(name: string) {
-    return (await after(supabase.rpc('create_group', { group_name: name.trim() }))) as ID;
+    return (await afterAndLoad(supabase.rpc('create_group', { group_name: name.trim() }))) as ID;
   },
 
   async renameGroup(groupId: ID, name: string) {
+    patchGroup(groupId, (g) => (g.name = name.trim()));
     await after(supabase.from('groups').update({ name: name.trim() }).eq('id', groupId));
   },
 
   /** With an email, the player stays "invited" until they sign in with it. */
   async addMember(groupId: ID, name: string, contact: Contact | null) {
-    return (await after(
+    return (await afterAndLoad(
       supabase.rpc('invite_member', {
         g: groupId,
         player_name: name.trim(),
@@ -259,20 +299,22 @@ export const repo = {
   },
 
   async joinGroup(code: string) {
-    return (await after(supabase.rpc('join_group', { code }))) as ID;
+    return (await afterAndLoad(supabase.rpc('join_group', { code }))) as ID;
   },
 
   async setRole(groupId: ID, playerId: ID, role: Role) {
+    patchGroup(groupId, (g) => g.members.forEach((m) => m.playerId === playerId && (m.role = role)));
     await after(supabase.rpc('set_member_role', { g: groupId, p: playerId, new_role: role }));
   },
 
   async removeMember(groupId: ID, playerId: ID) {
+    patchGroup(groupId, (g) => (g.members = g.members.filter((m) => m.playerId !== playerId)));
     await after(supabase.rpc('remove_member', { g: groupId, p: playerId }));
   },
 
   /** Opening a session sends the invitation to every member of the group. */
   async createSession(groupId: ID, input: { format: Format; date: string; place: string; capacity: number }) {
-    const row = await after(
+    const row = await afterAndLoad(
       supabase
         .from('sessions')
         .insert({ group_id: groupId, format: input.format, date: input.date, place: input.place.trim(), capacity: input.capacity })
@@ -283,18 +325,22 @@ export const repo = {
   },
 
   async setCapacity(sessionId: ID, capacity: number) {
+    patchSession(sessionId, (s) => (s.capacity = Math.max(1, capacity)));
     await after(supabase.from('sessions').update({ capacity: Math.max(1, capacity) }).eq('id', sessionId));
   },
 
   async setSessionStatus(sessionId: ID, value: Session['status']) {
+    patchSession(sessionId, (s) => (s.status = value));
     await after(supabase.from('sessions').update({ status: value }).eq('id', sessionId));
   },
 
   async setCaptain(sessionId: ID, playerId: ID | null) {
+    patchSession(sessionId, (s) => (s.captainId = playerId));
     await after(supabase.from('sessions').update({ captain_id: playerId }).eq('id', sessionId));
   },
 
   async deleteSession(sessionId: ID) {
+    optimistic((d) => (d.sessions = d.sessions.filter((s) => s.id !== sessionId)));
     await after(supabase.from('sessions').delete().eq('id', sessionId));
   },
 
@@ -303,6 +349,14 @@ export const repo = {
    * goes to the back of the queue: no jumping ahead.
    */
   async answer(sessionId: ID, playerId: ID, value: 'in' | 'out' | 'none') {
+    patchSession(sessionId, (s) => {
+      const wasIn = s.registrations.includes(playerId);
+      s.registrations = s.registrations.filter((x) => x !== playerId);
+      s.declined = s.declined.filter((x) => x !== playerId);
+      if (value === 'in') s.registrations.push(playerId);
+      if (value === 'out') s.declined.push(playerId);
+      if (wasIn && value !== 'in' && s.captainId === playerId) s.captainId = null;
+    });
     if (value === 'none') {
       await after(supabase.from('session_answers').delete().match({ session_id: sessionId, profile_id: playerId }));
     } else {
@@ -311,28 +365,34 @@ export const repo = {
   },
 
   async createMatch(sessionId: ID) {
-    const row = await after(supabase.from('matches').insert({ session_id: sessionId }).select('id').single());
+    const row = await afterAndLoad(supabase.from('matches').insert({ session_id: sessionId }).select('id').single());
     return row!.id as ID;
   },
 
   async deleteMatch(matchId: ID) {
+    optimistic((d) => (d.matches = d.matches.filter((m) => m.id !== matchId)));
     await after(supabase.from('matches').delete().eq('id', matchId));
   },
 
   async setTeams(matchId: ID, teamA: ID[], teamB: ID[], opponentName = '') {
+    patchMatch(matchId, (m) => Object.assign(m, { teamA, teamB, opponentName: opponentName.trim() }));
     await after(supabase.from('matches').update({ team_a: teamA, team_b: teamB, opponent_name: opponentName.trim() }).eq('id', matchId));
   },
 
   async startMatch(matchId: ID) {
     const startedAt = findMatch(state, matchId)?.startedAt ?? new Date().toISOString();
+    patchMatch(matchId, (m) => Object.assign(m, { status: 'live', startedAt }));
     await after(supabase.from('matches').update({ status: 'live', started_at: startedAt }).eq('id', matchId));
   },
 
   async finishMatch(matchId: ID) {
-    await after(supabase.from('matches').update({ status: 'finished', finished_at: new Date().toISOString() }).eq('id', matchId));
+    const finishedAt = new Date().toISOString();
+    patchMatch(matchId, (m) => Object.assign(m, { status: 'finished', finishedAt }));
+    await after(supabase.from('matches').update({ status: 'finished', finished_at: finishedAt }).eq('id', matchId));
   },
 
   async resumeMatch(matchId: ID) {
+    patchMatch(matchId, (m) => Object.assign(m, { status: 'live', finishedAt: null }));
     await after(supabase.from('matches').update({ status: 'live', finished_at: null }).eq('id', matchId));
   },
 
@@ -366,6 +426,7 @@ export const repo = {
   },
 
   async castVote(matchId: ID, voterId: ID, picks: [ID, ID, ID]) {
+    patchMatch(matchId, (m) => m.voters.push(voterId));
     await after(supabase.from('votes').insert({ match_id: matchId, voter_id: voterId, pick1: picks[0], pick2: picks[1], pick3: picks[2] }));
   },
 
