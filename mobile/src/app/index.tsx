@@ -1,10 +1,11 @@
 import { Redirect, router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useCurrentPlayer } from '@/data/hooks';
 import { repo, useAuthStatus, useData } from '@/data/store';
 import { isAdmin } from '@/domain/rules';
+import { hasChosenCamp } from '@/ui/app-icon';
 import { Body, Button, Card, Display, Empty, Eyebrow, Field, HalfwayRule, Muted, Screen, Section, Tag, tap } from '@/ui/kit';
 import { colors, fonts, space } from '@/ui/theme';
 
@@ -13,6 +14,14 @@ export default function Home() {
   const me = useCurrentPlayer();
   const auth = useAuthStatus();
   const [code, setCode] = useState('');
+
+  // First launch on this phone: let the player pick their jersey icon.
+  useEffect(() => {
+    if (auth !== 'ready' || !me) return;
+    hasChosenCamp().then((chosen) => {
+      if (!chosen) router.push({ pathname: '/camp', params: { first: '1' } });
+    });
+  }, [auth, me]);
   if (auth !== 'ready') return <Redirect href="/welcome" />;
   if (!me) {
     return (

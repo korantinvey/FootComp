@@ -71,6 +71,7 @@ export default function RootLayout() {
         <Stack.Screen name="group/new" options={{ presentation: 'modal', title: 'Nouveau groupe' }} />
         <Stack.Screen name="paywall" options={{ presentation: 'modal', title: 'Abonnement' }} />
         <Stack.Screen name="account" options={{ title: 'Mon compte' }} />
+        <Stack.Screen name="camp" options={{ title: 'Icône de l’app' }} />
         <Stack.Screen name="legal/[doc]" options={{ title: '' }} />
         <Stack.Screen name="join/[code]" options={{ title: 'Rejoindre' }} />
         <Stack.Screen name="group/[groupId]/index" options={{ title: '' }} />

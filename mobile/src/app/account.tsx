@@ -1,13 +1,15 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Linking, View } from 'react-native';
+import { Image, Linking, View } from 'react-native';
 
 import { useCurrentPlayer } from '@/data/hooks';
 import { repo, useData } from '@/data/store';
 import { SUPPORT_EMAIL } from '@/legal';
 import { act } from '@/ui/act';
+import { currentJersey } from '@/ui/app-icon';
 import { Alert } from '@/ui/dialog';
+import { JERSEYS } from '@/ui/jerseys.generated';
 import { Body, Button, Card, Empty, Field, Muted, Screen, Section } from '@/ui/kit';
 import { colors, fonts } from '@/ui/theme';
 
@@ -15,6 +17,7 @@ export default function Account() {
   const me = useCurrentPlayer();
   const data = useData();
   const [name, setName] = useState(me?.name ?? '');
+  const jersey = JERSEYS.find((j) => j.id === currentJersey()) ?? JERSEYS[0];
 
   if (!me) {
     return (
@@ -58,6 +61,16 @@ export default function Account() {
       <Section title="Profil">
         <Field label="Nom de joueur" value={name} onChangeText={setName} returnKeyType="done" onSubmitEditing={() => name.trim() && act(() => repo.renamePlayer(me.id, name))} />
         <Button variant="ghost" label="Enregistrer" disabled={!name.trim() || name.trim() === me.name} onPress={() => act(() => repo.renamePlayer(me.id, name))} />
+      </Section>
+
+      <Section title="Icône de l’app">
+        <Card onPress={() => router.push('/camp')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Image source={jersey.preview} style={{ width: 44, height: 44 }} />
+          <View style={{ flex: 1 }}>
+            <Body>Choisis ton camp</Body>
+            <Muted>{jersey.name}</Muted>
+          </View>
+        </Card>
       </Section>
 
       <Section title="Connexion">

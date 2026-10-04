@@ -7,6 +7,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.26",
+    "expo-alternate-app-icons": "^8.0.0",
     "expo-build-properties": "~57.0.22",
     "expo-constants": "~57.0.20",
     "expo-crypto": "~57.0.3",
@@ -31,6 +32,8 @@
     "@types/react": "~19.2.2",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
+    "opentype.js": "^2.0.0",
+    "sharp": "^0.35.5",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -39,7 +42,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "legal": "node scripts/build-legal.mjs"
+    "legal": "node scripts/build-legal.mjs",
+    "icons": "node scripts/build-icons.mjs"
   },
   "private": true
 }

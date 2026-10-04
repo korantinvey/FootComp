@@ -8,7 +8,7 @@
     "scheme": "footcomp",
     "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "requireFullScreen": true,
       "bundleIdentifier": "com.footcomp.app",
       "infoPlist": {
@@ -54,6 +54,139 @@
             "enableShrinkResourcesInReleaseBuilds": true
           }
         }
+      ],
+      [
+        "expo-alternate-app-icons",
+        [
+          {
+            "name": "NavyTurf",
+            "ios": "./assets/icons/NavyTurf/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/NavyTurf/android-foreground.png",
+              "backgroundColor": "#F6F7F9"
+            }
+          },
+          {
+            "name": "WhiteSky",
+            "ios": "./assets/icons/WhiteSky/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/WhiteSky/android-foreground.png",
+              "backgroundColor": "#2FA4E0"
+            }
+          },
+          {
+            "name": "RedBlackStripes",
+            "ios": "./assets/icons/RedBlackStripes/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/RedBlackStripes/android-foreground.png",
+              "backgroundColor": "#111827"
+            }
+          },
+          {
+            "name": "BlackWhiteStripes",
+            "ios": "./assets/icons/BlackWhiteStripes/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/BlackWhiteStripes/android-foreground.png",
+              "backgroundColor": "#E5E7EB"
+            }
+          },
+          {
+            "name": "BlueBlackStripes",
+            "ios": "./assets/icons/BlueBlackStripes/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/BlueBlackStripes/android-foreground.png",
+              "backgroundColor": "#111827"
+            }
+          },
+          {
+            "name": "GarnetBlueStripes",
+            "ios": "./assets/icons/GarnetBlueStripes/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/GarnetBlueStripes/android-foreground.png",
+              "backgroundColor": "#F6F7F9"
+            }
+          },
+          {
+            "name": "AllRed",
+            "ios": "./assets/icons/AllRed/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/AllRed/android-foreground.png",
+              "backgroundColor": "#F6F7F9"
+            }
+          },
+          {
+            "name": "RedWhiteCollar",
+            "ios": "./assets/icons/RedWhiteCollar/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/RedWhiteCollar/android-foreground.png",
+              "backgroundColor": "#111827"
+            }
+          },
+          {
+            "name": "SkyNavy",
+            "ios": "./assets/icons/SkyNavy/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/SkyNavy/android-foreground.png",
+              "backgroundColor": "#F6F7F9"
+            }
+          },
+          {
+            "name": "AllWhiteGold",
+            "ios": "./assets/icons/AllWhiteGold/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/AllWhiteGold/android-foreground.png",
+              "backgroundColor": "#1B2A4A"
+            }
+          },
+          {
+            "name": "RedWhiteSleeves",
+            "ios": "./assets/icons/RedWhiteSleeves/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/RedWhiteSleeves/android-foreground.png",
+              "backgroundColor": "#F6F7F9"
+            }
+          },
+          {
+            "name": "YellowBlack",
+            "ios": "./assets/icons/YellowBlack/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/YellowBlack/android-foreground.png",
+              "backgroundColor": "#111827"
+            }
+          },
+          {
+            "name": "GoldRed",
+            "ios": "./assets/icons/GoldRed/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/GoldRed/android-foreground.png",
+              "backgroundColor": "#B91C1C"
+            }
+          },
+          {
+            "name": "RedWhiteSplit",
+            "ios": "./assets/icons/RedWhiteSplit/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/RedWhiteSplit/android-foreground.png",
+              "backgroundColor": "#F6F7F9"
+            }
+          },
+          {
+            "name": "ForestGreen",
+            "ios": "./assets/icons/ForestGreen/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/ForestGreen/android-foreground.png",
+              "backgroundColor": "#F6F7F9"
+            }
+          },
+          {
+            "name": "WhiteChevron",
+            "ios": "./assets/icons/WhiteChevron/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/WhiteChevron/android-foreground.png",
+              "backgroundColor": "#1B2A4A"
+            }
+          }
+        ]
       ]
     ],
     "experiments": {
