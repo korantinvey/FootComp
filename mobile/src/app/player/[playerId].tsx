@@ -65,7 +65,7 @@ export default function PlayerScreen() {
             <Tile label="Victoires" value={pct(stats.winRate)} />
             <Tile label="Buts" value={String(stats.goals)} hint={`${stats.goalsPerMatch.toFixed(1)} / match`} />
             <Tile label="Passes déc." value={String(stats.assists)} hint={`${stats.assistsPerMatch.toFixed(1)} / match`} />
-            <Tile label="Points MVP" value={String(stats.mvpPoints)} hint={`${profile.mvpTop} fois MVP`} />
+            <Tile label="Points MVP" value={String(stats.mvpPoints)} hint={`${profile.mvpTop} fois homme du match`} />
           </View>
 
           <Section title="Forme">

@@ -65,7 +65,7 @@ export const MatchCard = forwardRef<View, Props>(function MatchCard({ match, ses
 
       {mvp && (
         <View style={styles.mvp}>
-          <Text style={styles.mvpLabel}>MVP</Text>
+          <Text style={styles.mvpLabel}>Homme du match</Text>
           <Text style={styles.mvpName} numberOfLines={1}>
             ⭐ {nameOf(mvp.playerId)}
           </Text>

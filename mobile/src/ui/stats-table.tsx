@@ -18,12 +18,13 @@ const COLUMNS: { key: Key; label: string; hint: string; format: (s: PlayerStats)
   { key: 'assists', label: 'PD', hint: 'Passes décisives', format: (s) => String(s.assists) },
   { key: 'assistsPerMatch', label: 'PD/M', hint: 'Passes décisives par match', format: (s) => (s.played ? s.assistsPerMatch.toFixed(1) : '–') },
   { key: 'mvpPoints', label: 'Pts MVP', hint: 'Points MVP cumulés', format: (s) => String(s.mvpPoints) },
-  { key: 'mvpWins', label: 'MVP', hint: 'Matchs terminés MVP', format: (s) => String(s.mvpWins) },
+  { key: 'mvpWins', label: 'Homme du match', hint: 'Fois homme du match (1er du vote MVP)', format: (s) => String(s.mvpWins) },
 ];
 
 const ROW = 52;
 const NAME_W = 132;
 const COL_W = 62;
+const colWidth = (key: Key) => (key === 'wins' ? COL_W + 14 : key === 'mvpWins' ? COL_W + 54 : COL_W);
 
 export function StatsTable({ stats, nameOf, onPlayer }: { stats: PlayerStats[]; nameOf: (id: ID) => string; onPlayer?: (id: ID) => void }) {
   const [sortKey, setSortKey] = useState<Key>('winRate');
@@ -71,7 +72,7 @@ export function StatsTable({ stats, nameOf, onPlayer }: { stats: PlayerStats[]; 
                     tap();
                     setSortKey(c.key);
                   }}
-                  style={[styles.cell, styles.head, { width: c.key === 'wins' ? COL_W + 14 : COL_W }]}>
+                  style={[styles.cell, styles.head, { width: colWidth(c.key) }]}>
                   <Text style={[styles.headLabel, active && { color: colors.highlight }]}>{c.label}</Text>
                   {active && <View style={styles.sortMark} />}
                 </Pressable>
@@ -81,7 +82,7 @@ export function StatsTable({ stats, nameOf, onPlayer }: { stats: PlayerStats[]; 
           {rows.map((s, i) => (
             <View key={s.playerId} style={[{ flexDirection: 'row' }, i % 2 === 1 && styles.zebra]}>
               {COLUMNS.map((c) => (
-                <View key={c.key} style={[styles.cell, { width: c.key === 'wins' ? COL_W + 14 : COL_W }]}>
+                <View key={c.key} style={[styles.cell, { width: colWidth(c.key) }]}>
                   {c.key === 'winRate' && s.played > 0 && (
                     <View style={[styles.winBar, { height: Math.max(3, s.winRate * (ROW - 16)) }]} />
                   )}
