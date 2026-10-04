@@ -51,12 +51,9 @@ export default function MatchSummary() {
           ranking.slice(0, 5).map((r, i) => (
             <View key={r.playerId} style={styles.mvpRow}>
               <Text style={[styles.mvpRank, i === 0 && { color: colors.highlight }]}>{i + 1}</Text>
-              <View style={{ flex: 1 }}>
-                {i === 0 && <Text style={styles.manOfMatch}>Homme du match</Text>}
-                <Body style={i === 0 && styles.mvpTop} numberOfLines={1}>
-                  {nameOf(r.playerId)}
-                </Body>
-              </View>
+              <Body style={[{ flex: 1 }, i === 0 && styles.mvpTop]} numberOfLines={1}>
+                {nameOf(r.playerId)}
+              </Body>
               <Text style={[styles.mvpPts, i === 0 && { color: colors.highlight }]}>{r.points} pts</Text>
             </View>
           ))
@@ -116,7 +113,6 @@ export default function MatchSummary() {
 }
 
 const styles = StyleSheet.create({
-  manOfMatch: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.highlight },
   mvpRow: { flexDirection: 'row', alignItems: 'center', gap: space(3), minHeight: 40 },
   mvpRank: { fontFamily: fonts.displayBlack, fontSize: 28, width: 24, color: colors.textMuted },
   mvpTop: { fontFamily: fonts.display, fontSize: 26, color: colors.highlight },
