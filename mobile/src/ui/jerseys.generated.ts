@@ -6,7 +6,6 @@ export type Jersey = { id: string; name: string; preview: ImageSourcePropType };
 /** The first jersey is the default app icon. */
 export const JERSEYS: Jersey[] = [
   { id: 'IndigoOrange', name: 'Indigo, bande orange', preview: require('../../assets/icons/IndigoOrange/preview.png') },
-  { id: 'NavyTurf', name: 'Marine, bande gazon', preview: require('../../assets/icons/NavyTurf/preview.png') },
   { id: 'WhiteSky', name: 'Blanc et ciel', preview: require('../../assets/icons/WhiteSky/preview.png') },
   { id: 'RedBlackStripes', name: 'Rayé rouge et noir', preview: require('../../assets/icons/RedBlackStripes/preview.png') },
   { id: 'BlackWhiteStripes', name: 'Rayé noir et blanc', preview: require('../../assets/icons/BlackWhiteStripes/preview.png') },

@@ -59,14 +59,6 @@
         "expo-alternate-app-icons",
         [
           {
-            "name": "NavyTurf",
-            "ios": "./assets/icons/NavyTurf/ios.png",
-            "android": {
-              "foregroundImage": "./assets/icons/NavyTurf/android-foreground.png",
-              "backgroundColor": "#F6F7F9"
-            }
-          },
-          {
             "name": "WhiteSky",
             "ios": "./assets/icons/WhiteSky/ios.png",
             "android": {

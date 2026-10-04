@@ -33,7 +33,6 @@ const band = (body, edge, inner) =>
 /** First entry is the default icon. ids become the native icon names (PascalCase). */
 const KITS = [
   { id: 'IndigoOrange', name: 'Indigo, bande orange', bg: '#12A150', body: band('#4F46E5', '#fff', '#F26B00'), num: '#fff' },
-  { id: 'NavyTurf', name: 'Marine, bande gazon', bg: '#F6F7F9', body: band('#1B2A4A', '#fff', '#12A150'), num: '#fff' },
   {
     id: 'WhiteSky',
     name: 'Blanc et ciel',
