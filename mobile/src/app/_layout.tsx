@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { listenToNotificationTaps, registerForPush } from '@/data/push';
+import { applyPendingUpdate } from '@/data/updates';
 import { startSync, useAuthStatus, useData } from '@/data/store';
 import { DialogHost } from '@/ui/dialog';
 import { colors, fonts } from '@/ui/theme';
@@ -45,7 +46,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    startSync();
+    applyPendingUpdate().finally(startSync);
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
   }, []);
 
