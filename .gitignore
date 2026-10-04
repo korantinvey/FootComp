@@ -1,0 +1,10 @@
+# Per-machine Claude Code settings
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
