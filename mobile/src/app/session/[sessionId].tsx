@@ -193,7 +193,7 @@ function MyAnswer({ session, meId, open }: { session: Session; meId: ID; open: b
   const position = session.registrations.indexOf(meId) + 1;
   const status =
     answer === 'in'
-      ? `Tu es inscrit · n°${position}`
+      ? 'Tu es inscrit'
       : answer === 'waiting'
         ? `Liste d’attente · n°${position - session.capacity}`
         : answer === 'out'
