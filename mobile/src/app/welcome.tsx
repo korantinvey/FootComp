@@ -46,7 +46,7 @@ export default function Welcome() {
   };
 
   const verify = async () => {
-    if (code.trim().length !== 6) return setError('Le code contient 6 chiffres.');
+    if (code.trim().length < 6) return setError('Saisis le code complet reçu par email.');
     setBusy(true);
     setError(null);
     try {
@@ -106,7 +106,7 @@ export default function Welcome() {
             {error && <Muted style={{ color: colors.danger }}>{error}</Muted>}
             <Button label="Recevoir mon code" busy={busy} disabled={!email.trim()} onPress={send} />
             <Muted style={{ fontSize: 13 }}>
-              Pas de mot de passe : on t’envoie un code à 6 chiffres. Si tu as déjà un compte, tu retrouves tes groupes et tes
+              Pas de mot de passe : on t’envoie un code par email. Si tu as déjà un compte, tu retrouves tes groupes et tes
               stats.
             </Muted>
             <Muted style={{ fontSize: 12, lineHeight: 18 }}>
@@ -128,24 +128,24 @@ export default function Welcome() {
               dans les spams.
             </Body>
             <Field
-              label="Code à 6 chiffres"
+              label="Code reçu par email"
               placeholder="123456"
               value={code}
               onChangeText={(t) => {
-                setCode(t.replace(/\D/g, '').slice(0, 6));
+                setCode(t.replace(/\D/g, '').slice(0, 10));
                 setError(null);
               }}
               keyboardType="number-pad"
               textContentType="oneTimeCode"
               autoComplete="one-time-code"
               autoFocus
-              maxLength={6}
+              maxLength={10}
               style={styles.code}
               returnKeyType="done"
               onSubmitEditing={verify}
             />
             {error && <Muted style={{ color: colors.danger }}>{error}</Muted>}
-            <Button label="Se connecter" busy={busy} disabled={code.length !== 6} onPress={verify} />
+            <Button label="Se connecter" busy={busy} disabled={code.length < 6} onPress={verify} />
             <View style={styles.row}>
               <Button
                 small
@@ -179,6 +179,6 @@ const styles = StyleSheet.create({
   bib: { width: 44, height: 10, borderRadius: 5 },
   lead: { fontSize: 18, lineHeight: 26, maxWidth: 340 },
   link: { color: colors.text, textDecorationLine: 'underline' },
-  code: { fontFamily: fonts.display, fontSize: 28, letterSpacing: 8, textAlign: 'center' },
+  code: { fontFamily: fonts.display, fontSize: 28, letterSpacing: 4, textAlign: 'center' },
   row: { flexDirection: 'row', gap: space(2), flexWrap: 'wrap' },
 });
