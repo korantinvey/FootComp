@@ -86,13 +86,6 @@ export default function Compo() {
 
   const save = () => repo.setTeams(match.id, teamA, five ? teamB : [], opponent);
 
-  const start = () =>
-    act(async () => {
-      await save();
-      await repo.startMatch(match.id);
-      router.replace({ pathname: '/match/[matchId]/live', params: { matchId: match.id } });
-    });
-
   const remove = () =>
     Alert.alert('Supprimer ce match ?', undefined, [
       { text: 'Annuler', style: 'cancel' },
@@ -158,8 +151,8 @@ export default function Compo() {
 
       {editable && (
         <View style={{ gap: space(3) }}>
-          <Button label="Lancer le match" disabled={!ready} onPress={start} />
-          <Button variant="ghost" label="Enregistrer la compo" onPress={() => act(async () => { await save(); router.back(); })} />
+          <Button label="Valider la compo" onPress={() => act(async () => { await save(); router.back(); })} />
+          {!ready && <Muted style={{ fontSize: 13 }}>Tu pourras lancer le match depuis la session une fois les équipes complètes.</Muted>}
           <Button variant="ghost" label="Supprimer ce match" onPress={remove} style={{ borderColor: colors.danger }} />
         </View>
       )}

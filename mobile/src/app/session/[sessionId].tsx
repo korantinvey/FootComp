@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatDay, formatTime, useCurrentPlayer, usePlayerNames } from '@/data/hooks';
 import { repo, useData } from '@/data/store';
 import { hasPremium } from '@/domain/plan';
-import { answerOf, canManageMatch, isAdmin, isCaptain, isMember, lineup, score } from '@/domain/rules';
+import { answerOf, canManageMatch, isAdmin, isCaptain, isComposed, isMember, lineup, score } from '@/domain/rules';
 import type { ID, Match, Session } from '@/domain/types';
 import { act } from '@/ui/act';
 import { Alert } from '@/ui/dialog';
@@ -144,7 +144,7 @@ export default function SessionScreen() {
 
       <Section title="Matchs">
         {matches.map((m, i) => (
-          <MatchRow key={m.id} match={m} index={i + 1} />
+          <MatchRow key={m.id} match={m} index={i + 1} manager={manager} />
         ))}
         {matches.length === 0 && (
           <Muted>
@@ -263,15 +263,24 @@ function PlayerList({ ids, onPress, accent, compact }: { ids: ID[]; onPress?: (i
   );
 }
 
-function MatchRow({ match, index }: { match: Match; index: number }) {
+function MatchRow({ match, index, manager }: { match: Match; index: number; manager: boolean }) {
   const { a, b } = score(match);
-  const status = match.status === 'draft' ? 'Compo en cours' : match.status === 'live' ? 'En direct' : 'Terminé';
+  const ready = isComposed(match);
+  const start = () =>
+    act(async () => {
+      await repo.startMatch(match.id);
+      router.push({ pathname: '/match/[matchId]/live', params: { matchId: match.id } });
+    });
+  const status = match.status === 'draft' ? (ready ? 'Compo prête' : 'Compo en cours') : match.status === 'live' ? 'En direct' : 'Terminé';
   const target = match.status === 'draft' ? '/match/[matchId]/compo' : match.status === 'live' ? '/match/[matchId]/live' : '/match/[matchId]';
   return (
     <Card onPress={() => router.push({ pathname: target, params: { matchId: match.id } })} style={styles.matchRow}>
       <View style={{ flex: 1, gap: 2 }}>
         <Eyebrow>Match {index}</Eyebrow>
         <Body>{status}</Body>
+        {match.status === 'draft' && manager && ready && (
+          <Button label="Lancer le match" onPress={start} style={{ marginTop: space(2) }} />
+        )}
       </View>
       {match.status !== 'draft' && (
         <View style={styles.score}>
