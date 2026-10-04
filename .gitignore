@@ -8,3 +8,6 @@ Thumbs.db
 # Supabase CLI local state
 supabase/.temp/
 supabase/.branches/
+
+# Firebase service account keys: secrets, never commit
+*firebase-adminsdk*.json

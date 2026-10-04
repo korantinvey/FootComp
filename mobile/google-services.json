@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "74563187378",
+    "project_id": "footcomp-d53cb",
+    "storage_bucket": "footcomp-d53cb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:74563187378:android:815aaddc107cbd235c0fab",
+        "android_client_info": {
+          "package_name": "com.footcomp.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJYnMKKSNg7nH-tJlSbTllluS4UrNxl-I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
