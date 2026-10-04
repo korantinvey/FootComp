@@ -10,7 +10,7 @@ export type Access = 'trial' | 'subscribed' | 'free';
  */
 export function accessOf(group: Group, now = Date.now()): Access {
   if (group.subscribedUntil && new Date(group.subscribedUntil).getTime() > now) return 'subscribed';
-  if (new Date(group.trialEndsAt).getTime() > now) return 'trial';
+  if (!group.trialRevoked && new Date(group.trialEndsAt).getTime() > now) return 'trial';
   return 'free';
 }
 

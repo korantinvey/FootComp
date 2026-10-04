@@ -3,13 +3,14 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useCurrentPlayer } from '@/data/hooks';
-import { repo } from '@/data/store';
+import { repo, useData } from '@/data/store';
 import { act } from '@/ui/act';
 import { Button, Field, Muted, Screen } from '@/ui/kit';
-import { space } from '@/ui/theme';
+import { colors, space } from '@/ui/theme';
 
 export default function NewGroup() {
   const me = useCurrentPlayer();
+  const { trialUsed } = useData();
   const [name, setName] = useState('');
 
   const create = async () => {
@@ -33,6 +34,11 @@ export default function NewGroup() {
           onSubmitEditing={create}
         />
         <Muted>Tu seras admin du groupe. Tu pourras ensuite ajouter des joueurs et nommer d&apos;autres admins.</Muted>
+        <Muted style={{ color: colors.text }}>
+          {trialUsed
+            ? 'Tu as déjà profité de ton mois gratuit : ce groupe démarre en version gratuite (invitations et inscriptions). Les compos, le live, les votes et les stats demandent un abonnement.'
+            : 'Ton premier groupe profite d’un mois gratuit avec tout débloqué. Le mois gratuit est offert une seule fois par compte.'}
+        </Muted>
         <Button label="Créer le groupe" disabled={!name.trim()} onPress={create} />
       </View>
     </Screen>

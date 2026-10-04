@@ -33,6 +33,8 @@ export type Group = {
   trialEndsAt: string;
   /** Paid by an admin for the whole group; null when not subscribed. */
   subscribedUntil: string | null;
+  /** Free month withdrawn by the server: same crew as an older group whose free month ran out. */
+  trialRevoked: boolean;
 };
 
 export type Format = 5 | 11;
@@ -93,6 +95,8 @@ export type Match = {
 export type AppData = {
   /** Profile of the signed-in player. */
   currentPlayerId: ID | null;
+  /** The free month is offered only on the first group a player creates. */
+  trialUsed: boolean;
   players: Player[];
   groups: Group[];
   sessions: Session[];

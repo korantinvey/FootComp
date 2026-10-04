@@ -30,7 +30,7 @@ export function PremiumGate({ group, admin, children }: { group: Group; admin: b
 export function Locked({ group, admin }: { group: Group; admin: boolean }) {
   return (
     <View style={{ gap: space(4) }}>
-      <Eyebrow>Mois gratuit terminé</Eyebrow>
+      <Eyebrow>{group.trialRevoked ? 'Mois gratuit déjà utilisé' : 'Version gratuite'}</Eyebrow>
       <Display style={{ fontSize: 34, lineHeight: 36 }}>Réservé aux groupes abonnés</Display>
       <Muted>
         Les invitations et les inscriptions restent gratuites. Les compos, le match en direct, les votes MVP et les stats
@@ -57,7 +57,11 @@ export function PlanBanner({ group, admin }: { group: Group; admin: boolean }) {
           {access === 'trial' ? `Mois gratuit · ${days} jour${days > 1 ? 's' : ''} restant${days > 1 ? 's' : ''}` : 'Version gratuite'}
         </Body>
         <Muted style={{ fontSize: 13 }}>
-          {access === 'trial' ? 'Tout est débloqué pour le groupe.' : 'Invitations seulement. Compos, live, votes et stats bloqués.'}
+          {access === 'trial'
+            ? 'Tout est débloqué pour le groupe.'
+            : group.trialRevoked
+              ? 'Mois gratuit déjà utilisé par une bonne partie de ces joueurs dans un autre groupe.'
+              : 'Invitations seulement. Compos, live, votes et stats bloqués.'}
         </Muted>
       </View>
       {admin && <Button small variant={access === 'free' ? 'primary' : 'ghost'} label="S’abonner" onPress={() => openPaywall(group.id)} />}

@@ -13,7 +13,7 @@ import { supabase } from './supabase';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'ready';
 
-const empty: AppData = { currentPlayerId: null, players: [], groups: [], sessions: [], matches: [] };
+const empty: AppData = { currentPlayerId: null, trialUsed: false, players: [], groups: [], sessions: [], matches: [] };
 
 let state: AppData = empty;
 let status: AuthStatus = 'loading';
@@ -66,10 +66,13 @@ async function load() {
   for (const r of [me, groups, members, profiles, contacts, sessions, answers, matches, goals]) fail(r.error);
 
   const groupIds = (groups.data ?? []).map((g) => g.id as string);
-  const [mvp, voters] = await Promise.all([
+  const [mvp, voters, access, trialUsed] = await Promise.all([
     Promise.all(groupIds.map((g) => supabase.rpc('group_mvp', { g }))),
     Promise.all(groupIds.map((g) => supabase.rpc('group_voters', { g }))),
+    supabase.rpc('my_group_access'),
+    supabase.rpc('my_trial_used'),
   ]);
+  const revoked = new Set(((access.data ?? []) as { group_id: string; trial_revoked: boolean }[]).filter((r) => r.trial_revoked).map((r) => r.group_id));
 
   const contactOf = new Map((contacts.data ?? []).map((c) => [c.profile_id as string, c]));
   const players: Player[] = (profiles.data ?? []).map((p) => {
@@ -89,6 +92,7 @@ async function load() {
 
   state = {
     currentPlayerId: me.data?.id ?? null,
+    trialUsed: !!trialUsed.data,
     players,
     groups: (groups.data ?? []).map((g) => ({
       id: g.id,
@@ -98,6 +102,7 @@ async function load() {
       inviteCode: g.invite_code,
       trialEndsAt: g.trial_ends_at,
       subscribedUntil: g.subscribed_until,
+      trialRevoked: revoked.has(g.id),
       members: (members.data ?? [])
         .filter((m) => m.group_id === g.id)
         .map((m) => ({ playerId: m.profile_id, role: m.role, status: m.status, joinedAt: m.joined_at })),
