@@ -5,6 +5,7 @@
  */
 import * as Crypto from 'expo-crypto';
 import { useSyncExternalStore } from 'react';
+import { AppState } from 'react-native';
 
 import type { Contact } from '@/domain/contact';
 import type { AppData, Format, Goal, ID, Match, Player, Role, Session, Team } from '@/domain/types';
@@ -44,6 +45,53 @@ function fail(error: { message: string; code?: string } | null): asserts error i
   if (/fetch|network/i.test(error.message)) throw new Error('Pas de connexion internet. Réessaie dans un instant.');
   throw new Error(error.message);
 }
+
+// ───────────────────────────── Rows → app types ─────────────────────────────
+
+type Row = Record<string, any>;
+
+/** Invitation answers per session, kept to rebuild the queue order on live changes. */
+let answersBySession = new Map<ID, Row[]>();
+
+function registrationsOf(sessionId: ID) {
+  const rows = [...(answersBySession.get(sessionId) ?? [])].sort((a, b) => a.answered_at.localeCompare(b.answered_at));
+  return {
+    registrations: rows.filter((a) => a.answer === 'in').map((a) => a.profile_id as ID),
+    declined: rows.filter((a) => a.answer === 'out').map((a) => a.profile_id as ID),
+  };
+}
+
+function toSession(r: Row): Session {
+  return {
+    id: r.id,
+    groupId: r.group_id,
+    format: r.format as Format,
+    date: r.date,
+    place: r.place,
+    status: r.status,
+    captainId: r.captain_id,
+    capacity: r.capacity,
+    ...registrationsOf(r.id),
+    createdAt: r.created_at,
+  };
+}
+
+const toGoal = (g: Row): Goal => ({ id: g.id, team: g.team, scorerId: g.scorer_id, assistId: g.assist_id, at: g.at });
+
+/** Match fields stored on the matches row (goals and votes come from elsewhere). */
+const matchFields = (m: Row) => ({
+  id: m.id as ID,
+  sessionId: m.session_id as ID,
+  groupId: m.group_id as ID,
+  format: m.format as Format,
+  status: m.status,
+  teamA: m.team_a as ID[],
+  teamB: m.team_b as ID[],
+  opponentName: m.opponent_name as string,
+  createdAt: m.created_at as string,
+  startedAt: m.started_at as string | null,
+  finishedAt: m.finished_at as string | null,
+});
 
 // ───────────────────────────── Loading ─────────────────────────────
 
@@ -91,6 +139,13 @@ async function load() {
     };
   });
 
+  answersBySession = new Map();
+  for (const a of answers.data ?? []) {
+    const list = answersBySession.get(a.session_id) ?? [];
+    list.push(a);
+    answersBySession.set(a.session_id, list);
+  }
+
   const mvpRows = mvp.flatMap((r) => (r.data ?? []) as { match_id: string; profile_id: string; points: number }[]);
   const voterRows = voters.flatMap((r) => (r.data ?? []) as { match_id: string; voter_id: string }[]);
 
@@ -111,39 +166,12 @@ async function load() {
         .filter((m) => m.group_id === g.id)
         .map((m) => ({ playerId: m.profile_id, role: m.role, status: m.status, joinedAt: m.joined_at })),
     })),
-    sessions: (sessions.data ?? []).map((s) => {
-      const mine = (answers.data ?? []).filter((a) => a.session_id === s.id);
-      return {
-        id: s.id,
-        groupId: s.group_id,
-        format: s.format as Format,
-        date: s.date,
-        place: s.place,
-        status: s.status,
-        captainId: s.captain_id,
-        capacity: s.capacity,
-        registrations: mine.filter((a) => a.answer === 'in').map((a) => a.profile_id),
-        declined: mine.filter((a) => a.answer === 'out').map((a) => a.profile_id),
-        createdAt: s.created_at,
-      } satisfies Session;
-    }),
+    sessions: (sessions.data ?? []).map(toSession),
     matches: (matches.data ?? []).map((m) => ({
-      id: m.id,
-      sessionId: m.session_id,
-      groupId: m.group_id,
-      format: m.format as Format,
-      status: m.status,
-      teamA: m.team_a,
-      teamB: m.team_b,
-      opponentName: m.opponent_name,
-      goals: (goals.data ?? [])
-        .filter((g) => g.match_id === m.id)
-        .map((g) => ({ id: g.id, team: g.team, scorerId: g.scorer_id, assistId: g.assist_id, at: g.at })),
+      ...matchFields(m),
+      goals: (goals.data ?? []).filter((g) => g.match_id === m.id).map(toGoal),
       mvp: mvpRows.filter((r) => r.match_id === m.id).map((r) => ({ playerId: r.profile_id, points: r.points })),
       voters: voterRows.filter((r) => r.match_id === m.id).map((r) => r.voter_id),
-      createdAt: m.created_at,
-      startedAt: m.started_at,
-      finishedAt: m.finished_at,
     })),
   };
   status = 'ready';
@@ -174,9 +202,91 @@ export function startSync() {
   });
   const channel = supabase.channel('footcomp');
   for (const table of ['group_members', 'sessions', 'session_answers', 'matches', 'goals']) {
-    channel.on('postgres_changes', { event: '*', schema: 'public', table }, scheduleReload);
+    channel.on('postgres_changes', { event: '*', schema: 'public', table }, (payload) =>
+      applyChange(table, payload.eventType, payload.new as Row, payload.old as Row),
+    );
   }
   channel.subscribe();
+  // Back from the background, events may have been missed: resync once.
+  AppState.addEventListener('change', (s) => {
+    if (s === 'active' && status === 'ready') scheduleReload();
+  });
+}
+
+/**
+ * Applies one realtime change to the screen without reloading everything.
+ * Falls back to a full reload when the change refers to data the app lacks.
+ */
+function applyChange(table: string, event: string, row: Row, old: Row) {
+  if (status !== 'ready') return;
+  const removed = event === 'DELETE';
+  const draft: AppData = JSON.parse(JSON.stringify(state));
+
+  switch (table) {
+    case 'sessions': {
+      draft.sessions = draft.sessions.filter((x) => x.id !== (removed ? old.id : row.id));
+      if (!removed) draft.sessions.push(toSession(row));
+      break;
+    }
+    case 'session_answers': {
+      const sid = (removed ? old : row).session_id as ID;
+      const pid = (removed ? old : row).profile_id as ID;
+      const list = (answersBySession.get(sid) ?? []).filter((a) => a.profile_id !== pid);
+      if (!removed) list.push(row);
+      answersBySession.set(sid, list);
+      const session = draft.sessions.find((x) => x.id === sid);
+      if (session) Object.assign(session, registrationsOf(sid));
+      break;
+    }
+    case 'matches': {
+      if (removed) {
+        draft.matches = draft.matches.filter((m) => m.id !== old.id);
+        break;
+      }
+      const existing = findMatch(draft, row.id);
+      if (existing) Object.assign(existing, matchFields(row));
+      else draft.matches.push({ ...matchFields(row), goals: [], mvp: [], voters: [] });
+      break;
+    }
+    case 'goals': {
+      const id = (removed ? old : row).id as ID;
+      for (const m of draft.matches) m.goals = m.goals.filter((g) => g.id !== id);
+      if (!removed) findMatch(draft, row.match_id)?.goals.push(toGoal(row));
+      for (const m of draft.matches) m.goals.sort((a, b) => a.at.localeCompare(b.at));
+      break;
+    }
+    case 'group_members': {
+      const gid = (removed ? old : row).group_id as ID;
+      const pid = (removed ? old : row).profile_id as ID;
+      const group = draft.groups.find((g) => g.id === gid);
+      const knownPlayer = draft.players.some((p) => p.id === pid);
+      // A new group for me, a player never seen before, or my own membership: reload.
+      if (!group || (!removed && !knownPlayer) || pid === draft.currentPlayerId) return scheduleReload();
+      group.members = group.members.filter((m) => m.playerId !== pid);
+      if (!removed) group.members.push({ playerId: pid, role: row.role, status: row.status, joinedAt: row.joined_at });
+      break;
+    }
+  }
+  state = draft;
+  emit();
+}
+
+/** MVP points and voters of one group, after a ballot. */
+async function reloadVotes(groupId: ID) {
+  const [mvp, voters] = await Promise.all([
+    supabase.rpc('group_mvp', { g: groupId }),
+    supabase.rpc('group_voters', { g: groupId }),
+  ]);
+  if (mvp.error || voters.error) return scheduleReload();
+  const mvpRows = (mvp.data ?? []) as { match_id: string; profile_id: string; points: number }[];
+  const voterRows = (voters.data ?? []) as { match_id: string; voter_id: string }[];
+  optimistic((d) => {
+    for (const m of d.matches) {
+      if (m.groupId !== groupId) continue;
+      m.mvp = mvpRows.filter((r) => r.match_id === m.id).map((r) => ({ playerId: r.profile_id, points: r.points }));
+      m.voters = voterRows.filter((r) => r.match_id === m.id).map((r) => r.voter_id);
+    }
+  });
 }
 
 export const refresh = () => load();
@@ -200,8 +310,8 @@ function findMatch(d: AppData, id: ID): Match | undefined {
 type Result<T> = PromiseLike<{ data: T; error: { message: string; code?: string } | null }>;
 
 /**
- * Server write whose effect is already on screen (optimistic). The full reload
- * runs in the background; on error it restores the server state and throws.
+ * Server write whose effect is already on screen (optimistic). Realtime then
+ * delivers the confirmed row; on error the server state is restored.
  */
 async function after<T>(promise: Result<T>) {
   const { data, error } = await promise;
@@ -209,7 +319,6 @@ async function after<T>(promise: Result<T>) {
     await load().catch(() => {});
     fail(error);
   }
-  scheduleReload();
   return data;
 }
 
@@ -427,7 +536,9 @@ export const repo = {
 
   async castVote(matchId: ID, voterId: ID, picks: [ID, ID, ID]) {
     patchMatch(matchId, (m) => m.voters.push(voterId));
+    const groupId = findMatch(state, matchId)?.groupId;
     await after(supabase.from('votes').insert({ match_id: matchId, voter_id: voterId, pick1: picks[0], pick2: picks[1], pick3: picks[2] }));
+    if (groupId) await reloadVotes(groupId);
   },
 
   /** Store requirement: deletes the account from inside the app. */
