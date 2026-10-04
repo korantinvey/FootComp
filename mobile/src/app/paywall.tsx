@@ -1,8 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useCurrentPlayer } from '@/data/hooks';
-import { useData } from '@/data/store';
+import { errorMessage, useCurrentPlayer } from '@/data/hooks';
+import { monthlyOffer, restoreGroup, subscribeGroup } from '@/data/purchases';
+import { getData, refresh, useData } from '@/data/store';
 import { accessOf, trialDaysLeft } from '@/domain/plan';
 import { isAdmin } from '@/domain/rules';
 import { Alert } from '@/ui/dialog';
@@ -15,6 +17,12 @@ export default function Paywall() {
   const data = useData();
   const me = useCurrentPlayer();
   const group = data.groups.find((g) => g.id === groupId);
+  const [offer, setOffer] = useState<Awaited<ReturnType<typeof monthlyOffer>>>(null);
+  const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
+
+  useEffect(() => {
+    monthlyOffer().then(setOffer).catch(() => setOffer(null));
+  }, []);
 
   if (!group || !me) {
     return (
@@ -26,11 +34,51 @@ export default function Paywall() {
 
   const access = accessOf(group);
   const admin = isAdmin(group, me.id);
+  const price = offer?.price ?? PRICE_LABEL.replace(' / mois', '');
 
-  const subscribe = () => {
-    // TODO: store purchase through RevenueCat (needs a development build); the
-    // store webhook then sets groups.subscribed_until on the server.
-    Alert.alert('Bientôt disponible', 'Le paiement par l’App Store et Google Play arrive avec la version publiée de l’app.');
+  /** The store confirms to our server through a webhook: wait for it before saying "done". */
+  const waitForServer = async () => {
+    for (let i = 0; i < 12; i++) {
+      await refresh();
+      const g = getData().groups.find((x) => x.id === group.id);
+      if (g && accessOf(g) === 'subscribed') return true;
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    return false;
+  };
+
+  const subscribe = async () => {
+    if (!offer) {
+      Alert.alert('Paiement indisponible', 'L’abonnement n’est pas encore proposé sur cet appareil. Réessaie plus tard.');
+      return;
+    }
+    setBusy('buy');
+    try {
+      if (!(await subscribeGroup(group.id, offer.pkg))) return;
+      const ok = await waitForServer();
+      Alert.alert(
+        ok ? 'Groupe abonné' : 'Paiement reçu',
+        ok ? `${group.name} a accès à tout. Merci !` : 'L’activation peut prendre une minute. Rouvre le groupe dans un instant.',
+        [{ text: 'OK', onPress: () => router.back() }],
+      );
+    } catch (e) {
+      Alert.alert('Paiement impossible', errorMessage(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const restore = async () => {
+    setBusy('restore');
+    try {
+      await restoreGroup(group.id);
+      const ok = await waitForServer();
+      Alert.alert('Restaurer mes achats', ok ? 'Abonnement retrouvé pour ce groupe.' : 'Aucun abonnement actif trouvé sur ton compte Apple ou Google.');
+    } catch (e) {
+      Alert.alert('Restauration impossible', errorMessage(e));
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
@@ -42,7 +90,7 @@ export default function Paywall() {
       </View>
 
       <View style={styles.price}>
-        <Body style={styles.priceValue}>{PRICE_LABEL}</Body>
+        <Body style={styles.priceValue}>{price} / mois</Body>
         <Muted>Sans engagement, résiliable à tout moment depuis ton compte App Store ou Google Play.</Muted>
       </View>
 
@@ -71,15 +119,15 @@ export default function Paywall() {
               maintenant ou attendre la fin.
             </Muted>
           )}
-          <Button label="Abonner le groupe" onPress={subscribe} />
-          <Button variant="ghost" label="Restaurer mes achats" onPress={() => Alert.alert('Restaurer mes achats', 'Disponible avec la version publiée sur les stores.')} />
+          <Button label="Abonner le groupe" busy={busy === 'buy'} disabled={!!busy} onPress={subscribe} />
+          <Button variant="ghost" label="Restaurer mes achats" busy={busy === 'restore'} disabled={!!busy} onPress={restore} />
         </View>
       ) : (
         <Muted style={{ color: colors.text }}>Seul un admin du groupe peut l’abonner.</Muted>
       )}
 
       <Muted style={styles.legal}>
-        Abonnement mensuel de {PRICE_LABEL.replace(' / mois', '')} pour tout le groupe, renouvelé automatiquement chaque mois. Le paiement
+        Abonnement mensuel de {price} pour tout le groupe, renouvelé automatiquement chaque mois. Le paiement
         est débité sur ton compte App Store ou Google Play à la confirmation de l’achat. L’abonnement se renouvelle sauf
         résiliation au moins 24 h avant la fin de la période en cours, depuis les réglages de ton compte Apple ou Google.
       </Muted>

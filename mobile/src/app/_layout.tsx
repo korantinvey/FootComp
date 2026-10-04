@@ -13,7 +13,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
-import { startSync, useAuthStatus } from '@/data/store';
+import { listenToNotificationTaps, registerForPush } from '@/data/push';
+import { startSync, useAuthStatus, useData } from '@/data/store';
 import { DialogHost } from '@/ui/dialog';
 import { colors, fonts } from '@/ui/theme';
 
@@ -33,6 +34,7 @@ const navTheme = {
 
 export default function RootLayout() {
   const auth = useAuthStatus();
+  const { currentPlayerId } = useData();
   const [fontsLoaded] = useFonts({
     Outfit_400Regular,
     Outfit_500Medium,
@@ -51,6 +53,14 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
+
+  useEffect(() => {
+    if (ready) return listenToNotificationTaps();
+  }, [ready]);
+
+  useEffect(() => {
+    if (currentPlayerId) registerForPush(currentPlayerId);
+  }, [currentPlayerId]);
 
   if (!ready) return null;
 
@@ -71,6 +81,7 @@ export default function RootLayout() {
         <Stack.Screen name="group/new" options={{ presentation: 'modal', title: 'Nouveau groupe' }} />
         <Stack.Screen name="paywall" options={{ presentation: 'modal', title: 'Abonnement' }} />
         <Stack.Screen name="account" options={{ title: 'Mon compte' }} />
+        <Stack.Screen name="player/[playerId]" options={{ title: 'Fiche joueur' }} />
         <Stack.Screen name="camp" options={{ title: 'Icône de l’app' }} />
         <Stack.Screen name="legal/[doc]" options={{ title: '' }} />
         <Stack.Screen name="join/[code]" options={{ title: 'Rejoindre' }} />

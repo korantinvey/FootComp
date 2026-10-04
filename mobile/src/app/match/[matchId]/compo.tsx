@@ -4,8 +4,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useCurrentPlayer, usePlayerNames } from '@/data/hooks';
 import { repo, useData } from '@/data/store';
+import { balanceTeams } from '@/domain/balance';
 import { hasPremium } from '@/domain/plan';
 import { canManageMatch, isAdmin, lineup } from '@/domain/rules';
+import { computeStats } from '@/domain/stats';
 import type { ID, Team } from '@/domain/types';
 import { act } from '@/ui/act';
 import { Alert } from '@/ui/dialog';
@@ -68,6 +70,14 @@ export default function Compo() {
     }
   };
 
+  /** Splits the registered players into two teams of equal level, from the group stats. */
+  const balance = () => {
+    const stats = computeStats(data.matches.filter((m) => m.groupId === group.id), pool);
+    const [a, b] = balanceTeams(pool, stats, size);
+    setTeamA(a);
+    setTeamB(b);
+  };
+
   const shuffle = () => {
     const ids = [...pool].sort(() => Math.random() - 0.5);
     setTeamA(ids.slice(0, size));
@@ -119,7 +129,17 @@ export default function Compo() {
 
       <Section
         title={`Inscrits · ${pool.length}`}
-        action={editable && <Button small variant="ghost" label="Tirage au sort" onPress={shuffle} />}>
+        action={
+          editable && (
+            <View style={{ flexDirection: 'row', gap: space(2) }}>
+              {five && <Button small label="Équilibrer" onPress={balance} />}
+              <Button small variant="ghost" label="Au hasard" onPress={shuffle} />
+            </View>
+          )
+        }>
+        {editable && five && (
+          <Muted style={{ fontSize: 13 }}>« Équilibrer » répartit les joueurs selon leurs stats (victoires, buts, passes, MVP) pour des équipes de même niveau.</Muted>
+        )}
         {pool.map((id) => {
           const team: Team | null = teamA.includes(id) ? 'A' : teamB.includes(id) ? 'B' : null;
           return (

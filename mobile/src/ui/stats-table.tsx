@@ -25,7 +25,7 @@ const ROW = 52;
 const NAME_W = 132;
 const COL_W = 62;
 
-export function StatsTable({ stats, nameOf }: { stats: PlayerStats[]; nameOf: (id: ID) => string }) {
+export function StatsTable({ stats, nameOf, onPlayer }: { stats: PlayerStats[]; nameOf: (id: ID) => string; onPlayer?: (id: ID) => void }) {
   const [sortKey, setSortKey] = useState<Key>('winRate');
 
   const rows = useMemo(
@@ -43,12 +43,17 @@ export function StatsTable({ stats, nameOf }: { stats: PlayerStats[]; nameOf: (i
           <Text style={styles.headLabel}>Joueur</Text>
         </View>
         {rows.map((s, i) => (
-          <View key={s.playerId} style={[styles.cell, styles.nameCell, i % 2 === 1 && styles.zebra]}>
+          <Pressable
+            key={s.playerId}
+            accessibilityRole="button"
+            accessibilityLabel={`Fiche de ${nameOf(s.playerId)}`}
+            onPress={() => onPlayer?.(s.playerId)}
+            style={[styles.cell, styles.nameCell, i % 2 === 1 && styles.zebra]}>
             <Text style={styles.rank}>{i + 1}</Text>
             <Text style={styles.name} numberOfLines={1}>
               {nameOf(s.playerId)}
             </Text>
-          </View>
+          </Pressable>
         ))}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>

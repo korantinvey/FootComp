@@ -9,6 +9,7 @@ import { useSyncExternalStore } from 'react';
 import type { Contact } from '@/domain/contact';
 import type { AppData, Format, Goal, ID, Match, Player, Role, Session, Team } from '@/domain/types';
 
+import { unregisterPush } from './push';
 import { supabase } from './supabase';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'ready';
@@ -28,6 +29,9 @@ function subscribe(l: () => void) {
 export function useData() {
   return useSyncExternalStore(subscribe, () => state);
 }
+
+/** Current snapshot, for code outside React render. */
+export const getData = () => state;
 
 export function useAuthStatus() {
   return useSyncExternalStore(subscribe, () => status);
@@ -223,6 +227,7 @@ export const repo = {
   },
 
   async signOut() {
+    await unregisterPush().catch(() => {});
     await supabase.auth.signOut();
     state = empty;
     status = 'signedOut';

@@ -1,10 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { formatTime, useCurrentPlayer, usePlayerNames } from '@/data/hooks';
 import { repo, useData } from '@/data/store';
-import { canManageMatch, mvpRanking, playersOf, score } from '@/domain/rules';
+import { canManageMatch, mvpRanking, playersOf } from '@/domain/rules';
 import { act } from '@/ui/act';
+import { canShareCard, MatchCard, shareCard } from '@/ui/match-card';
 import { Body, Button, Card, Empty, Eyebrow, HalfwayRule, Muted, Screen, Section } from '@/ui/kit';
 import { colors, fonts, space, teamColor } from '@/ui/theme';
 
@@ -13,6 +15,7 @@ export default function MatchSummary() {
   const data = useData();
   const me = useCurrentPlayer();
   const nameOf = usePlayerNames();
+  const cardRef = useRef<View>(null);
   const match = data.matches.find((m) => m.id === matchId);
   const session = data.sessions.find((s) => s.id === match?.sessionId);
   const group = data.groups.find((g) => g.id === match?.groupId);
@@ -25,29 +28,21 @@ export default function MatchSummary() {
     );
   }
 
-  const { a, b } = score(match);
   const five = match.format === 5;
   const ranking = mvpRanking(match);
   const present = playersOf(match);
   const manager = canManageMatch(group, session, me.id);
-  const nameA = five ? 'Orange' : 'Nous';
   const nameB = five ? 'Bleu' : match.opponentName || 'Adversaire';
 
   return (
     <Screen>
-      <View style={styles.board}>
-        <View style={styles.side}>
-          <Text style={[styles.sideName, { color: colors.teamA }]}>{nameA}</Text>
-          <Text style={[styles.bigScore, { color: colors.teamA }]}>{a}</Text>
-        </View>
-        <Text style={styles.sep}>–</Text>
-        <View style={styles.side}>
-          <Text style={[styles.sideName, { color: five ? colors.teamB : colors.text }]} numberOfLines={1}>
-            {nameB}
-          </Text>
-          <Text style={[styles.bigScore, { color: five ? colors.teamB : colors.text }]}>{b}</Text>
-        </View>
-      </View>
+      <MatchCard ref={cardRef} match={match} session={session} group={group} nameOf={nameOf} />
+      {canShareCard && match.status === 'finished' && (
+        <Button
+          label="Partager le résultat"
+          onPress={() => cardRef.current && act(() => shareCard(cardRef.current!), 'Partage impossible')}
+        />
+      )}
 
       <Section title={`MVP · ${match.voters.length}/${present.length} votes`}>
         {ranking.length === 0 ? (
@@ -118,11 +113,6 @@ export default function MatchSummary() {
 }
 
 const styles = StyleSheet.create({
-  board: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space(4), paddingVertical: space(4) },
-  side: { alignItems: 'center', flex: 1 },
-  sideName: { fontFamily: fonts.bodySemi, fontSize: 13, letterSpacing: 1.6, },
-  bigScore: { fontFamily: fonts.displayBlack, fontSize: 110, lineHeight: 112 },
-  sep: { fontFamily: fonts.display, fontSize: 48, color: colors.textMuted },
   mvpRow: { flexDirection: 'row', alignItems: 'center', gap: space(3), minHeight: 40 },
   mvpRank: { fontFamily: fonts.displayBlack, fontSize: 28, width: 24, color: colors.textMuted },
   mvpTop: { fontFamily: fonts.display, fontSize: 26, color: colors.highlight },

@@ -172,6 +172,9 @@ function Players({ group, admin, meId }: { group: Group; admin: boolean; meId: I
     return null;
   };
 
+  const openProfile = (playerId: ID) =>
+    router.push({ pathname: '/player/[playerId]', params: { playerId, groupId: group.id } });
+
   const manage = (playerId: ID) => {
     const m = group.members.find((x) => x.playerId === playerId)!;
     const c = playerContact(playerId);
@@ -185,6 +188,7 @@ function Players({ group, admin, meId }: { group: Group; admin: boolean; meId: I
         ? { text: 'Retirer le rôle admin', onPress: () => run(() => repo.setRole(group.id, playerId, 'member')) }
         : { text: 'Nommer admin', onPress: () => run(() => repo.setRole(group.id, playerId, 'admin')) },
       { text: 'Retirer du groupe', style: 'destructive', onPress: () => run(() => repo.removeMember(group.id, playerId)) },
+      { text: 'Voir la fiche', onPress: () => openProfile(playerId) },
       { text: 'Fermer', style: 'cancel' },
     );
     Alert.alert(nameOf(playerId), c ? c.value : m.role === 'admin' ? 'Admin du groupe' : 'Joueur du groupe', actions);
@@ -251,7 +255,7 @@ function Players({ group, admin, meId }: { group: Group; admin: boolean; meId: I
       <Section title={`Effectif · ${group.members.length}${invited ? ` · ${invited} invité${invited > 1 ? 's' : ''}` : ''}`}>
         {admin && <Muted>Touche un joueur pour relancer son invitation, le nommer admin ou le retirer du groupe.</Muted>}
         {members.map((m) => (
-          <Card key={m.playerId} onPress={admin ? () => manage(m.playerId) : undefined} style={styles.memberRow}>
+          <Card key={m.playerId} onPress={() => (admin ? manage(m.playerId) : openProfile(m.playerId))} style={styles.memberRow}>
             <Body style={{ flex: 1, color: m.status === 'invited' ? colors.textMuted : colors.text }}>
               {nameOf(m.playerId)}
               {m.playerId === meId ? ' (toi)' : ''}
@@ -286,7 +290,11 @@ function Stats({ group }: { group: Group }) {
   return (
     <Section title={`${finished} match${finished > 1 ? 's' : ''} terminé${finished > 1 ? 's' : ''}`}>
       <Muted>Touche une colonne pour trier.</Muted>
-      <StatsTable stats={stats} nameOf={nameOf} />
+      <StatsTable
+        stats={stats}
+        nameOf={nameOf}
+        onPlayer={(id) => router.push({ pathname: '/player/[playerId]', params: { playerId: id, groupId: group.id } })}
+      />
       <Muted style={{ fontSize: 12, lineHeight: 18 }}>{STATS_LEGEND}</Muted>
     </Section>
   );
