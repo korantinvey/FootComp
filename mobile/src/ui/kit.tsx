@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -35,7 +36,7 @@ export function Screen({
   return (
     <SafeAreaView style={s.screen} edges={edges}>
       {scroll ? (
-        <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="always" keyboardDismissMode="on-drag">
           {children}
         </ScrollView>
       ) : (
@@ -91,6 +92,7 @@ export function Button({ label, variant = 'primary', small, busy, disabled, styl
       accessibilityRole="button"
       disabled={disabled || busy}
       onPress={(e) => {
+        Keyboard.dismiss();
         tap();
         onPress?.(e);
       }}

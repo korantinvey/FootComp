@@ -62,7 +62,7 @@ export default function NewSession() {
 
       <View style={{ gap: space(2) }}>
         <Eyebrow>Jour</Eyebrow>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space(2) }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" contentContainerStyle={{ gap: space(2) }}>
           {days.map((d, i) => {
             const active = i === dayIndex;
             return (
