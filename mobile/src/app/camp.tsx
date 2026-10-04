@@ -1,8 +1,9 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { act } from '@/ui/act';
+import { Alert } from '@/ui/dialog';
 import { canChangeIcon, chooseJersey, currentJersey } from '@/ui/app-icon';
 import { JERSEYS } from '@/ui/jerseys.generated';
 import { Button, Display, Eyebrow, Muted, Screen, tap } from '@/ui/kit';
@@ -16,11 +17,23 @@ export default function Camp() {
 
   const done = () => (first ? router.replace('/') : router.back());
 
-  const confirm = async () => {
+  const apply = async () => {
     setBusy(true);
     await act(() => chooseJersey(picked), 'Icône non modifiée');
     setBusy(false);
     done();
+  };
+
+  // Android closes the app while it swaps the home screen icon: say so first.
+  const confirm = () => {
+    if (Platform.OS === 'android' && canChangeIcon() && picked !== currentJersey()) {
+      Alert.alert('Changer l’icône', 'FootComp va se fermer quelques secondes le temps que ton téléphone change l’icône. Rouvre-la depuis ton nouveau maillot.', [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Changer', onPress: apply },
+      ]);
+    } else {
+      apply();
+    }
   };
 
   return (
