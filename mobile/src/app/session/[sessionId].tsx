@@ -246,6 +246,7 @@ function PlayerList({ ids, onPress, accent, compact }: { ids: ID[]; onPress?: (i
         <Pressable
           key={id}
           accessibilityRole={onPress ? 'button' : 'text'}
+          pressRetentionOffset={24}
           disabled={!onPress}
           onPress={() => {
             tap();

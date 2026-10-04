@@ -91,6 +91,8 @@ export function Button({ label, variant = 'primary', small, busy, disabled, styl
       {...p}
       accessibilityRole="button"
       disabled={disabled || busy}
+      hitSlop={small ? 10 : 6}
+      pressRetentionOffset={24}
       onPress={(e) => {
         Keyboard.dismiss();
         tap();
@@ -134,6 +136,7 @@ export function Card({ children, style, onPress }: { children: ReactNode; style?
   return (
     <Pressable
       accessibilityRole="button"
+      pressRetentionOffset={24}
       onPress={() => {
         tap();
         onPress();
@@ -184,6 +187,8 @@ export function Segmented<T extends string>({
           <Pressable
             key={o.value}
             accessibilityRole="tab"
+            hitSlop={4}
+            pressRetentionOffset={24}
             accessibilityState={{ selected: active }}
             onPress={() => {
               tap();
@@ -230,7 +235,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonSmall: { minHeight: 36, paddingHorizontal: space(4) },
+  buttonSmall: { minHeight: 42, paddingHorizontal: space(4) },
   buttonLabel: { fontFamily: fonts.bodySemi, fontSize: 17 },
   buttonLabelSmall: { fontSize: 14 },
   input: {
@@ -257,7 +262,7 @@ const s = StyleSheet.create({
   ruleCircle: { width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: colors.line },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 36 },
   segmented: { flexDirection: 'row', backgroundColor: colors.surfacePressed, borderRadius: radius.pill, padding: 4 },
-  segment: { flex: 1, minHeight: 38, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  segment: { flex: 1, minHeight: 44, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   segmentActive: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
   segmentLabel: { fontFamily: fonts.bodySemi, fontSize: 15, color: colors.textMuted },
   tag: { borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3, alignSelf: 'flex-start', borderWidth: 1 },
