@@ -93,13 +93,13 @@ export default function SessionScreen() {
       <HalfwayRule />
 
       <Section title={`Inscrits · ${confirmed.length}/${session.capacity}`}>
-        {confirmed.length === 0 ? <Muted>Personne n’a encore répondu présent.</Muted> : <PlayerList ids={confirmed} onPress={onPlayer} accent={colors.text} />}
+        {confirmed.length === 0 ? <Muted>Personne n’a encore répondu présent.</Muted> : <PlayerList ids={confirmed} onPress={onPlayer} tone="in" />}
       </Section>
 
       {waiting.length > 0 && (
         <Section title={`Liste d’attente · ${waiting.length}`}>
           <Muted>Le premier de la liste prend la place d’un inscrit qui se désiste.</Muted>
-          <PlayerList ids={waiting} onPress={onPlayer} accent={colors.highlight} />
+          <PlayerList ids={waiting} onPress={onPlayer} tone="waiting" />
         </Section>
       )}
 
@@ -108,13 +108,13 @@ export default function SessionScreen() {
           {session.declined.length > 0 && (
             <View style={{ gap: space(2) }}>
               <Muted>Absents</Muted>
-              <PlayerList ids={session.declined} onPress={onPlayer} compact />
+              <PlayerList ids={session.declined} onPress={onPlayer} tone="out" />
             </View>
           )}
           {silent.length > 0 && (
             <View style={{ gap: space(2) }}>
               <Muted>Pas encore répondu</Muted>
-              <PlayerList ids={silent} onPress={onPlayer} compact />
+              <PlayerList ids={silent} onPress={onPlayer} tone="out" />
             </View>
           )}
           {admin && open && <Muted style={{ fontSize: 12 }}>Touche un joueur pour noter sa réponse à sa place.</Muted>}
@@ -238,7 +238,16 @@ function MyAnswer({ session, meId, open }: { session: Session; meId: ID; open: b
   );
 }
 
-function PlayerList({ ids, onPress, accent, compact }: { ids: ID[]; onPress?: (id: ID) => void; accent?: string; compact?: boolean }) {
+/** in = registered (green), waiting = waiting list (amber), out = absent or no answer (grey). */
+const TONES = {
+  in: { bg: colors.primarySoft, border: colors.primary, number: colors.highlight, name: colors.text },
+  waiting: { bg: '#FEF3C7', border: '#F59E0B', number: '#B45309', name: colors.text },
+  out: { bg: 'transparent', border: colors.lineStrong, number: colors.textMuted, name: colors.textMuted },
+} as const;
+
+function PlayerList({ ids, onPress, tone }: { ids: ID[]; onPress?: (id: ID) => void; tone: keyof typeof TONES }) {
+  const t = TONES[tone];
+  const compact = tone === 'out';
   const nameOf = usePlayerNames();
   return (
     <View style={styles.list}>
@@ -252,9 +261,14 @@ function PlayerList({ ids, onPress, accent, compact }: { ids: ID[]; onPress?: (i
             tap();
             onPress?.(id);
           }}
-          style={({ pressed }) => [styles.player, compact && styles.playerCompact, pressed && { backgroundColor: colors.surfacePressed }]}>
-          {!compact && <Text style={[styles.order, { color: accent }]}>{i + 1}</Text>}
-          <Text style={[styles.playerName, compact && { color: colors.textMuted, flex: 0 }]} numberOfLines={1}>
+          style={({ pressed }) => [
+            styles.player,
+            { backgroundColor: t.bg, borderColor: t.border },
+            compact && styles.playerCompact,
+            pressed && { opacity: 0.7 },
+          ]}>
+          {!compact && <Text style={[styles.order, { color: t.number }]}>{i + 1}</Text>}
+          <Text style={[styles.playerName, { color: t.name }, compact && { flex: 0 }]} numberOfLines={1}>
             {nameOf(id)}
           </Text>
         </Pressable>
@@ -311,7 +325,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.line,
   },
-  playerCompact: { flexBasis: 'auto', flexGrow: 0, minHeight: 36, backgroundColor: 'transparent' },
+  playerCompact: { flexBasis: 'auto', flexGrow: 0, minHeight: 36, borderStyle: 'dashed' },
   order: { fontFamily: fonts.display, fontSize: 18, width: 20 },
   playerName: { flex: 1, fontFamily: fonts.bodySemi, fontSize: 15, color: colors.text },
   matchRow: { flexDirection: 'row', alignItems: 'center' },
