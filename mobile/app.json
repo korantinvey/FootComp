@@ -139,6 +139,14 @@
             }
           },
           {
+            "name": "RedWhiteSides",
+            "ios": "./assets/icons/RedWhiteSides/ios.png",
+            "android": {
+              "foregroundImage": "./assets/icons/RedWhiteSides/android-foreground.png",
+              "backgroundColor": "#F6F7F9"
+            }
+          },
+          {
             "name": "YellowBlack",
             "ios": "./assets/icons/YellowBlack/ios.png",
             "android": {

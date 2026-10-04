@@ -49,6 +49,7 @@ const KITS = [
   { id: 'SkyNavy', name: 'Bleu ciel, col marine', bg: '#F6F7F9', body: `<rect width="100" height="100" fill="#6CABDD"/>${collar('#1C2C5B', 6)}`, num: '#1C2C5B' },
   { id: 'AllWhiteGold', name: 'Tout blanc, filet or', bg: '#1B2A4A', body: `<rect width="100" height="100" fill="#fff"/>${collar('#C9A227')}`, num: '#C9A227' },
   { id: 'RedWhiteSleeves', name: 'Rouge, manches blanches', bg: '#F6F7F9', body: `<rect width="100" height="100" fill="#D7192A"/><g fill="#fff">${SLEEVES}</g>`, num: '#fff' },
+  { id: 'RedWhiteSides', name: 'Rouge, flancs blancs', bg: '#F6F7F9', body: `<rect width="100" height="100" fill="#DC052D"/><rect x="31" y="40" width="5" height="60" fill="#fff"/><rect x="64" y="40" width="5" height="60" fill="#fff"/>${collar('#fff', 6)}`, num: '#fff' },
   { id: 'YellowBlack', name: 'Jaune et noir', bg: '#111827', body: `<rect width="100" height="100" fill="#FFD100"/>${collar('#111111', 6)}<g fill="#111111">${SLEEVES}</g>`, num: '#111111' },
   {
     id: 'GoldRed',

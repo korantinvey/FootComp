@@ -16,6 +16,7 @@ export const JERSEYS: Jersey[] = [
   { id: 'SkyNavy', name: 'Bleu ciel, col marine', preview: require('../../assets/icons/SkyNavy/preview.png') },
   { id: 'AllWhiteGold', name: 'Tout blanc, filet or', preview: require('../../assets/icons/AllWhiteGold/preview.png') },
   { id: 'RedWhiteSleeves', name: 'Rouge, manches blanches', preview: require('../../assets/icons/RedWhiteSleeves/preview.png') },
+  { id: 'RedWhiteSides', name: 'Rouge, flancs blancs', preview: require('../../assets/icons/RedWhiteSides/preview.png') },
   { id: 'YellowBlack', name: 'Jaune et noir', preview: require('../../assets/icons/YellowBlack/preview.png') },
   { id: 'GoldRed', name: 'Or et rouge', preview: require('../../assets/icons/GoldRed/preview.png') },
   { id: 'RedWhiteSplit', name: 'Coupé rouge et blanc', preview: require('../../assets/icons/RedWhiteSplit/preview.png') },
