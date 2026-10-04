@@ -10,6 +10,7 @@ import { isAdmin, lineup } from '@/domain/rules';
 import { computeStats } from '@/domain/stats';
 import type { Group, ID } from '@/domain/types';
 import { act } from '@/ui/act';
+import { PlayerAvatar } from '@/ui/avatar';
 import { Alert, type AlertButton } from '@/ui/dialog';
 import { Body, Button, Card, Display, Empty, Eyebrow, Field, Muted, Screen, Section, Segmented, Tag } from '@/ui/kit';
 import { sendInvite, shareInvite } from '@/ui/invite';
@@ -256,6 +257,7 @@ function Players({ group, admin, meId }: { group: Group; admin: boolean; meId: I
         {admin && <Muted>Touche un joueur pour relancer son invitation, le nommer admin ou le retirer du groupe.</Muted>}
         {members.map((m) => (
           <Card key={m.playerId} onPress={() => (admin ? manage(m.playerId) : openProfile(m.playerId))} style={styles.memberRow}>
+            <PlayerAvatar playerId={m.playerId} size={36} />
             <Body style={{ flex: 1, color: m.status === 'invited' ? colors.textMuted : colors.text }}>
               {nameOf(m.playerId)}
               {m.playerId === meId ? ' (toi)' : ''}

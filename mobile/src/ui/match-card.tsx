@@ -6,6 +6,7 @@ import { captureRef } from 'react-native-view-shot';
 import { mvpRanking, score } from '@/domain/rules';
 import type { Group, ID, Match, Session } from '@/domain/types';
 
+import { PlayerAvatar } from './avatar';
 import { colors, fonts, radius, space } from './theme';
 
 type Props = { match: Match; session: Session; group: Group; nameOf: (id: ID | null) => string };
@@ -65,10 +66,13 @@ export const MatchCard = forwardRef<View, Props>(function MatchCard({ match, ses
 
       {mvp && (
         <View style={styles.mvp}>
-          <Text style={styles.mvpLabel}>MVP</Text>
-          <Text style={styles.mvpName} numberOfLines={1}>
-            ⭐ {nameOf(mvp.playerId)}
-          </Text>
+          <PlayerAvatar playerId={mvp.playerId} size={64} />
+          <View style={{ flexShrink: 1 }}>
+            <Text style={styles.mvpLabel}>⭐ MVP</Text>
+            <Text style={styles.mvpName} numberOfLines={1}>
+              {nameOf(mvp.playerId)}
+            </Text>
+          </View>
         </View>
       )}
       <Text style={styles.brand}>FootComp</Text>
@@ -137,6 +141,6 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   mvpLabel: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.highlight },
-  mvpName: { fontFamily: fonts.display, fontSize: 18, color: colors.text, flexShrink: 1 },
+  mvpName: { fontFamily: fonts.display, fontSize: 22, color: colors.text, flexShrink: 1 },
   brand: { fontFamily: fonts.displayBlack, fontSize: 14, color: colors.onFill, textAlign: 'center', marginTop: space(3), opacity: 0.85 },
 });

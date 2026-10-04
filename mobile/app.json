@@ -56,6 +56,14 @@
           }
         }
       ],
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#12A150"
+        }
+      ],
       [
         "expo-alternate-app-icons",
         [
@@ -188,14 +196,6 @@
             }
           }
         ]
-      ],
-      "expo-sharing",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/android-icon-monochrome.png",
-          "color": "#12A150"
-        }
       ]
     ],
     "experiments": {

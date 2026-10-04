@@ -91,6 +91,7 @@ const matchFields = (m: Row) => ({
   createdAt: m.created_at as string,
   startedAt: m.started_at as string | null,
   finishedAt: m.finished_at as string | null,
+  votesClosed: !!m.votes_closed,
 });
 
 // ───────────────────────────── Loading ─────────────────────────────
@@ -108,7 +109,7 @@ async function load() {
     supabase.from('profiles').select('id').eq('user_id', auth.user.id).maybeSingle(),
     supabase.from('groups').select('*'),
     supabase.from('group_members').select('*'),
-    supabase.from('profiles').select('id, name, user_id, created_at'),
+    supabase.from('profiles').select('id, name, user_id, created_at, avatar_kit, avatar_number'),
     supabase.from('profile_contacts').select('*'),
     supabase.from('sessions').select('*'),
     supabase.from('session_answers').select('*').order('answered_at'),
@@ -135,6 +136,8 @@ async function load() {
       ...(c?.email ? { email: c.email } : {}),
       ...(c?.phone ? { phone: c.phone } : {}),
       hasAccount: !!p.user_id,
+      avatarKit: p.avatar_kit ?? null,
+      avatarNumber: p.avatar_number ?? null,
       createdAt: p.created_at,
     };
   });
@@ -376,6 +379,19 @@ export const repo = {
     state = empty;
     status = 'signedOut';
     emit();
+  },
+
+  async setAvatar(playerId: ID, kit: string | null, number: number | null) {
+    optimistic((d) => {
+      const p = d.players.find((x) => x.id === playerId);
+      if (p) Object.assign(p, { avatarKit: kit, avatarNumber: number });
+    });
+    await after(supabase.from('profiles').update({ avatar_kit: kit, avatar_number: number }).eq('id', playerId));
+  },
+
+  async closeVotes(matchId: ID) {
+    patchMatch(matchId, (m) => (m.votesClosed = true));
+    await after(supabase.from('matches').update({ votes_closed: true }).eq('id', matchId));
   },
 
   async renamePlayer(playerId: ID, name: string) {

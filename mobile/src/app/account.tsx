@@ -8,6 +8,7 @@ import { repo, useData } from '@/data/store';
 import { SUPPORT_EMAIL } from '@/legal';
 import { act } from '@/ui/act';
 import { currentJersey } from '@/ui/app-icon';
+import { PlayerAvatar } from '@/ui/avatar';
 import { Alert } from '@/ui/dialog';
 import { JERSEYS } from '@/ui/jerseys.generated';
 import { Body, Button, Card, Empty, Field, Muted, Screen, Section } from '@/ui/kit';
@@ -61,6 +62,16 @@ export default function Account() {
       <Section title="Profil">
         <Field label="Nom de joueur" value={name} onChangeText={setName} returnKeyType="done" onSubmitEditing={() => name.trim() && act(() => repo.renamePlayer(me.id, name))} />
         <Button variant="ghost" label="Enregistrer" disabled={!name.trim() || name.trim() === me.name} onPress={() => act(() => repo.renamePlayer(me.id, name))} />
+      </Section>
+
+      <Section title="Mon avatar">
+        <Card onPress={() => router.push('/avatar')} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <PlayerAvatar playerId={me.id} size={56} />
+          <View style={{ flex: 1 }}>
+            <Body>{me.avatarKit ? 'Changer de maillot' : 'Choisis ton maillot'}</Body>
+            <Muted>Ton maillot floqué à ton nom, visible par ton groupe</Muted>
+          </View>
+        </Card>
       </Section>
 
       <Section title="Icône de l’app">

@@ -6,6 +6,7 @@ import { formatTime, useCurrentPlayer, usePlayerNames } from '@/data/hooks';
 import { repo, useData } from '@/data/store';
 import { canManageMatch, mvpRanking, playersOf } from '@/domain/rules';
 import { act } from '@/ui/act';
+import { Alert } from '@/ui/dialog';
 import { canShareCard, MatchCard, shareCard } from '@/ui/match-card';
 import { Body, Button, Card, Empty, Eyebrow, HalfwayRule, Muted, Screen, Section } from '@/ui/kit';
 import { colors, fonts, space, teamColor } from '@/ui/theme';
@@ -32,15 +33,33 @@ export default function MatchSummary() {
   const ranking = mvpRanking(match);
   const present = playersOf(match);
   const manager = canManageMatch(group, session, me.id);
+  const voteOver = match.votesClosed || match.voters.length >= present.length;
   const nameB = five ? 'Bleu' : match.opponentName || 'Adversaire';
 
   return (
     <Screen>
       <MatchCard ref={cardRef} match={match} session={session} group={group} nameOf={nameOf} />
-      {canShareCard && match.status === 'finished' && (
+      {canShareCard && match.status === 'finished' && voteOver && (
         <Button
           label="Partager le résultat"
           onPress={() => cardRef.current && act(() => shareCard(cardRef.current!), 'Partage impossible')}
+        />
+      )}
+      {match.status === 'finished' && !voteOver && (
+        <Muted>
+          Le résultat se partage une fois le vote MVP terminé : {match.voters.length}/{present.length} joueurs ont voté.
+        </Muted>
+      )}
+      {match.status === 'finished' && !voteOver && manager && (
+        <Button
+          variant="ghost"
+          label="Clore le vote"
+          onPress={() =>
+            Alert.alert('Clore le vote ?', 'Les joueurs qui n’ont pas voté ne pourront plus le faire. Le MVP sera calculé avec les votes reçus.', [
+              { text: 'Annuler', style: 'cancel' },
+              { text: 'Clore le vote', onPress: () => act(() => repo.closeVotes(match.id)) },
+            ])
+          }
         />
       )}
 

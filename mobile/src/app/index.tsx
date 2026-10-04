@@ -6,8 +6,9 @@ import { useCurrentPlayer } from '@/data/hooks';
 import { repo, useAuthStatus, useData } from '@/data/store';
 import { isAdmin } from '@/domain/rules';
 import { hasChosenCamp } from '@/ui/app-icon';
-import { Body, Button, Card, Display, Empty, Eyebrow, Field, HalfwayRule, Muted, Screen, Section, Tag, tap } from '@/ui/kit';
-import { colors, fonts, space } from '@/ui/theme';
+import { PlayerAvatar } from '@/ui/avatar';
+import { Button, Card, Display, Empty, Eyebrow, Field, HalfwayRule, Muted, Screen, Section, Tag, tap } from '@/ui/kit';
+import { colors, space } from '@/ui/theme';
 
 export default function Home() {
   const data = useData();
@@ -50,8 +51,8 @@ export default function Home() {
             tap();
             router.push('/account');
           }}
-          style={styles.avatar}>
-          <Body style={styles.avatarLetter}>{me.name.slice(0, 1).toUpperCase()}</Body>
+          hitSlop={8}>
+          <PlayerAvatar playerId={me.id} size={52} />
         </Pressable>
       </View>
 
@@ -119,15 +120,6 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: space(4), paddingTop: space(4) },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarLetter: { fontFamily: fonts.displayBlack, fontSize: 24, color: colors.onFill, lineHeight: 28 },
   groupTop: { flexDirection: 'row', alignItems: 'center', gap: space(3) },
   groupName: { fontSize: 30, lineHeight: 32, flex: 1 },
   joinRow: { flexDirection: 'row', gap: space(3) },

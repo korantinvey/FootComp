@@ -64,6 +64,17 @@ export default function Vote() {
     );
   }
 
+  if (match.votesClosed) {
+    return (
+      <Screen>
+        <Empty title="Le vote est clos">
+          <Muted>Le capitaine a clos le vote MVP de ce match.</Muted>
+          <Button label="Voir le résultat" onPress={goSummary} />
+        </Empty>
+      </Screen>
+    );
+  }
+
   if (!voterId) {
     return (
       <Screen>

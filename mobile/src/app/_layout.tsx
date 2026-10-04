@@ -83,6 +83,7 @@ export default function RootLayout() {
         <Stack.Screen name="paywall" options={{ presentation: 'modal', title: 'Abonnement' }} />
         <Stack.Screen name="account" options={{ title: 'Mon compte' }} />
         <Stack.Screen name="player/[playerId]" options={{ title: 'Fiche joueur' }} />
+        <Stack.Screen name="avatar" options={{ title: 'Mon avatar' }} />
         <Stack.Screen name="camp" options={{ title: 'Icône de l’app' }} />
         <Stack.Screen name="legal/[doc]" options={{ title: '' }} />
         <Stack.Screen name="join/[code]" options={{ title: 'Rejoindre' }} />

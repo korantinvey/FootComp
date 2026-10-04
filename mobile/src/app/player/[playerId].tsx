@@ -8,6 +8,7 @@ import { hasPremium } from '@/domain/plan';
 import { playerProfile, type Outcome } from '@/domain/profile';
 import { isAdmin } from '@/domain/rules';
 import { computeStats } from '@/domain/stats';
+import { PlayerAvatar } from '@/ui/avatar';
 import { Card, Display, Empty, Eyebrow, Muted, Screen, Section } from '@/ui/kit';
 import { Locked } from '@/ui/premium';
 import { colors, fonts, radius, space } from '@/ui/theme';
@@ -49,7 +50,10 @@ export default function PlayerScreen() {
     <Screen>
       <View style={{ gap: space(2) }}>
         <Eyebrow>{group.name}</Eyebrow>
-        <Display>{nameOf(playerId)}</Display>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
+          <PlayerAvatar playerId={playerId} size={84} />
+          <Display style={{ flex: 1 }}>{nameOf(playerId)}</Display>
+        </View>
         <Muted>
           {stats.played} match{stats.played > 1 ? 's' : ''} · {stats.wins} V · {stats.draws} N · {stats.losses} D
         </Muted>

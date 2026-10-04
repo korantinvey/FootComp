@@ -8,6 +8,9 @@ export type Player = {
   phone?: string;
   /** False for a player added without account (no smartphone, not joined yet). */
   hasAccount: boolean;
+  /** Avatar: jersey id from "Choisis ton camp", printed with the name and this number. */
+  avatarKit: string | null;
+  avatarNumber: number | null;
   createdAt: string;
 };
 
@@ -90,6 +93,8 @@ export type Match = {
   createdAt: string;
   startedAt: string | null;
   finishedAt: string | null;
+  /** The captain closed the MVP vote. */
+  votesClosed: boolean;
 };
 
 export type AppData = {
