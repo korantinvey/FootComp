@@ -92,7 +92,7 @@ export default function SessionScreen() {
 
       <HalfwayRule />
 
-      <Section title={`Inscrits · ${confirmed.length}/${session.capacity}`}>
+      <Section title={`Inscrits · ${confirmed.length} sur ${session.capacity} places`}>
         {confirmed.length === 0 ? <Muted>Personne n’a encore répondu présent.</Muted> : <PlayerList ids={confirmed} onPress={onPlayer} tone="in" />}
       </Section>
 
@@ -193,9 +193,9 @@ function MyAnswer({ session, meId, open }: { session: Session; meId: ID; open: b
   const position = session.registrations.indexOf(meId) + 1;
   const status =
     answer === 'in'
-      ? `Tu es inscrit · place ${position}/${session.capacity}`
+      ? `Tu es inscrit · n°${position}`
       : answer === 'waiting'
-        ? `Liste d’attente · ${position - session.capacity}${position - session.capacity === 1 ? 'er' : 'e'}`
+        ? `Liste d’attente · n°${position - session.capacity}`
         : answer === 'out'
           ? 'Tu as répondu absent'
           : 'Tu n’as pas encore répondu';
