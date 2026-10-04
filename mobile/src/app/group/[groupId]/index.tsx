@@ -80,7 +80,7 @@ function Sessions({ group, admin }: { group: Group; admin: boolean }) {
           <Button
             small
             variant="ghost"
-            label="Inviter le groupe"
+            label="+ Nouveau match"
             onPress={() => router.push({ pathname: '/session/new', params: { groupId: group.id } })}
           />
         )
@@ -94,7 +94,7 @@ function Sessions({ group, admin }: { group: Group; admin: boolean }) {
           </Muted>
           {admin && (
             <Button
-              label="Inviter le groupe"
+              label="+ Nouveau match"
               onPress={() => router.push({ pathname: '/session/new', params: { groupId: group.id } })}
             />
           )}
