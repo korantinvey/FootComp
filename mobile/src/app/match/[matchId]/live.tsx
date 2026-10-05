@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,6 +26,7 @@ export default function Live() {
 
   const [correcting, setCorrecting] = useState(false);
   const [pendingGoal, setPendingGoal] = useState<Goal | null>(null);
+  const lastTouchRef = useRef({ key: '', at: 0 });
 
   const premium = !!group && hasPremium(group);
 
@@ -57,7 +58,18 @@ export default function Live() {
   const canScore = canManageMatch(group, session, me.id) && match.status === 'live';
   const five = match.format === 5;
 
+  // Goals count as soon as the finger lands (sweaty hands, gloves, on the move);
+  // a second touch on the same tile within half a second is a bounce, not a goal.
+  const lastTouch = lastTouchRef;
+  const isBounce = (key: string) => {
+    const now = Date.now();
+    const bounce = lastTouch.current.key === key && now - lastTouch.current.at < 500;
+    lastTouch.current = { key, at: now };
+    return bounce;
+  };
+
   const onPlayer = (playerId: ID, team: Team) => {
+    if (isBounce(playerId)) return;
     if (!canScore) return;
     if (correcting) {
       const last = [...match.goals].reverse().find((g) => g.scorerId === playerId);
@@ -73,6 +85,7 @@ export default function Live() {
   };
 
   const onOpponent = () => {
+    if (isBounce('opponent')) return;
     if (!canScore) return;
     if (correcting) {
       const last = [...match.goals].reverse().find((g) => g.team === 'B');
@@ -179,7 +192,7 @@ function TeamHalf({
               accessibilityRole="button"
               accessibilityLabel={correcting ? `Retirer un but à ${nameOf(id)}` : `But de ${nameOf(id)}`}
               disabled={disabled || (correcting && goals === 0)}
-              onPress={() => onPress(id, team)}
+              onPressIn={() => onPress(id, team)}
               style={({ pressed }) => [
                 styles.tile,
                 twoCols && { width: '48.5%', flexGrow: 0, flexBasis: '48.5%' },
@@ -218,7 +231,7 @@ function OpponentHalf({ name, goals, correcting, disabled, onPress }: { name: st
         accessibilityRole="button"
         accessibilityLabel={correcting ? 'Retirer un but adverse' : 'But adverse'}
         disabled={disabled || (correcting && goals === 0)}
-        onPress={onPress}
+        onPressIn={onPress}
         style={({ pressed }) => [styles.tile, styles.opponent, pressed && { backgroundColor: colors.text }, correcting && goals > 0 && { borderColor: colors.danger, borderStyle: 'dashed' }]}>
         <Text style={styles.opponentName} numberOfLines={2}>
           {name}
