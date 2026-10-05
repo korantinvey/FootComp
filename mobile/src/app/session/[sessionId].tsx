@@ -1,22 +1,27 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { formatDay, formatTime, useCurrentPlayer, usePlayerNames } from '@/data/hooks';
 import { repo, useData } from '@/data/store';
 import { hasPremium } from '@/domain/plan';
-import { answerOf, canManageMatch, isAdmin, isCaptain, isComposed, isMember, lineup, score } from '@/domain/rules';
+import { answerOf, canManageMatch, isAdmin, isCaptain, isComposed, isMember, lineup, mvpRanking, playersOf, score } from '@/domain/rules';
 import type { ID, Match, Session } from '@/domain/types';
 import { act } from '@/ui/act';
 import { Alert } from '@/ui/dialog';
-import { Body, Button, Card, Display, Empty, Eyebrow, HalfwayRule, Muted, Screen, Section, Tag, tap } from '@/ui/kit';
+import { PlayerAvatar } from '@/ui/avatar';
+import { Body, Button, Card, Display, Empty, Eyebrow, Muted, Screen, Section, Segmented, Tag, tap } from '@/ui/kit';
 import { openPaywall } from '@/ui/premium';
 import { colors, fonts, radius, space } from '@/ui/theme';
+
+type Tab = 'players' | 'compo' | 'mvp';
 
 export default function SessionScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   const data = useData();
   const me = useCurrentPlayer();
   const nameOf = usePlayerNames();
+  const [tab, setTab] = useState<Tab>('players');
   const session = data.sessions.find((s) => s.id === sessionId);
   const group = data.groups.find((g) => g.id === session?.groupId);
 
@@ -31,6 +36,8 @@ export default function SessionScreen() {
   const admin = isAdmin(group, me.id);
   const captain = isCaptain(session, me.id);
   const manager = canManageMatch(group, session, me.id);
+  // The compo belongs to the captain; an admin steps in only while there is none.
+  const composer = captain || (admin && !session.captainId);
   const premium = hasPremium(group);
   const open = session.status === 'open';
   const { confirmed, waiting } = lineup(session);
@@ -88,103 +95,160 @@ export default function SessionScreen() {
         </View>
       </View>
 
-      {isMember(group, me.id) && <MyAnswer session={session} meId={me.id} open={open} />}
-
-      <HalfwayRule />
-
-      <Section title={`Inscrits · ${confirmed.length} sur ${session.capacity} places`}>
-        {confirmed.length === 0 ? <Muted>Personne n’a encore répondu présent.</Muted> : <PlayerList ids={confirmed} onPress={onPlayer} tone="in" />}
-      </Section>
-
-      {waiting.length > 0 && (
-        <Section title={`Liste d’attente · ${waiting.length}`}>
-          <Muted>Le premier de la liste prend la place d’un inscrit qui se désiste.</Muted>
-          <PlayerList ids={waiting} onPress={onPlayer} tone="waiting" />
-        </Section>
-      )}
-
-      {(session.declined.length > 0 || silent.length > 0) && (
-        <Section title="Les autres">
-          {session.declined.length > 0 && (
-            <View style={{ gap: space(2) }}>
-              <Muted>Absents</Muted>
-              <PlayerList ids={session.declined} onPress={onPlayer} tone="out" />
-            </View>
-          )}
-          {silent.length > 0 && (
-            <View style={{ gap: space(2) }}>
-              <Muted>Pas encore répondu</Muted>
-              <PlayerList ids={silent} onPress={onPlayer} tone="out" />
-            </View>
-          )}
-          {admin && open && <Muted style={{ fontSize: 12 }}>Touche un joueur pour noter sa réponse à sa place.</Muted>}
-        </Section>
-      )}
-
-      <Section title="Capitaine">
-        {session.captainId ? (
-          <Body style={styles.captain}>{nameOf(session.captainId)}</Body>
-        ) : (
-          <Muted>{admin ? 'Choisis le capitaine parmi les inscrits : il fera les compos.' : 'Pas encore de capitaine désigné.'}</Muted>
-        )}
-        {admin && confirmed.length > 0 && (
-          <View style={styles.chips}>
-            {confirmed.map((id) => (
-              <Button
-                key={id}
-                small
-                variant={session.captainId === id ? 'primary' : 'ghost'}
-                label={nameOf(id)}
-                onPress={() => act(() => repo.setCaptain(session.id, session.captainId === id ? null : id))}
-              />
-            ))}
-          </View>
-        )}
-      </Section>
-
-      <Section title="Matchs">
-        {matches.map((m, i) => (
-          <MatchRow key={m.id} match={m} index={i + 1} manager={manager} />
+      {matches
+        .filter((m) => m.status === 'live')
+        .map((m) => (
+          <MatchRow key={m.id} match={m} index={matches.indexOf(m) + 1} manager={manager} />
         ))}
-        {matches.length === 0 && (
-          <Muted>
-            {manager
-              ? `Quand les ${needed} joueurs sont inscrits, prépare le match et fais la compo.`
-              : 'Le capitaine prépare la compo du prochain match.'}
-          </Muted>
-        )}
-        {manager && (
+
+      <Segmented<Tab>
+        value={composer || tab !== 'compo' ? tab : 'players'}
+        onChange={setTab}
+        options={[
+          { value: 'players', label: 'Inscrits' },
+          ...(composer ? [{ value: 'compo' as const, label: 'Compo' }] : []),
+          { value: 'mvp', label: 'Vote MVP' },
+        ]}
+      />
+
+      {(tab === 'players' || (tab === 'compo' && !composer)) && (
+        <>
+          {isMember(group, me.id) && <MyAnswer session={session} meId={me.id} open={open} />}
+
+          <Section title={`Inscrits · ${confirmed.length} sur ${session.capacity} places`}>
+            {confirmed.length === 0 ? <Muted>Personne n’a encore répondu présent.</Muted> : <PlayerList ids={confirmed} onPress={onPlayer} tone="in" />}
+          </Section>
+
+          {waiting.length > 0 && (
+            <Section title={`Liste d’attente · ${waiting.length}`}>
+              <Muted>Le premier de la liste prend la place d’un inscrit qui se désiste.</Muted>
+              <PlayerList ids={waiting} onPress={onPlayer} tone="waiting" />
+            </Section>
+          )}
+
+          {(session.declined.length > 0 || silent.length > 0) && (
+            <Section title="Les autres">
+              {session.declined.length > 0 && (
+                <View style={{ gap: space(2) }}>
+                  <Muted>Absents</Muted>
+                  <PlayerList ids={session.declined} onPress={onPlayer} tone="out" />
+                </View>
+              )}
+              {silent.length > 0 && (
+                <View style={{ gap: space(2) }}>
+                  <Muted>Pas encore répondu</Muted>
+                  <PlayerList ids={silent} onPress={onPlayer} tone="out" />
+                </View>
+              )}
+              {admin && open && <Muted style={{ fontSize: 12 }}>Touche un joueur pour noter sa réponse à sa place.</Muted>}
+            </Section>
+          )}
+
+          <Section title="Capitaine">
+            {session.captainId ? (
+              <Body style={styles.captain}>{nameOf(session.captainId)}</Body>
+            ) : (
+              <Muted>{admin ? 'Choisis le capitaine parmi les inscrits : il fera les compos.' : 'Pas encore de capitaine désigné.'}</Muted>
+            )}
+            {admin && confirmed.length > 0 && (
+              <View style={styles.chips}>
+                {confirmed.map((id) => (
+                  <Button
+                    key={id}
+                    small
+                    variant={session.captainId === id ? 'primary' : 'ghost'}
+                    label={nameOf(id)}
+                    onPress={() => act(() => repo.setCaptain(session.id, session.captainId === id ? null : id))}
+                  />
+                ))}
+              </View>
+            )}
+          </Section>
+
+          {admin && (
+            <Section title="Gestion">
+              <View style={styles.capacityRow}>
+                <Body style={{ flex: 1 }}>Places</Body>
+                <Button small variant="ghost" label="−" disabled={session.capacity <= 1} onPress={() => act(() => repo.setCapacity(session.id, session.capacity - 1))} style={styles.stepBtn} />
+                <Text style={styles.capacity}>{session.capacity}</Text>
+                <Button small variant="ghost" label="+" onPress={() => act(() => repo.setCapacity(session.id, session.capacity + 1))} style={styles.stepBtn} />
+              </View>
+              <Button
+                variant="ghost"
+                label={open ? 'Clore l’invitation' : 'Rouvrir l’invitation'}
+                onPress={() => act(() => repo.setSessionStatus(session.id, open ? 'closed' : 'open'))}
+              />
+              <Button variant="ghost" label="Supprimer ce match" onPress={confirmDelete} style={{ borderColor: colors.danger }} />
+            </Section>
+          )}
+        </>
+      )}
+
+      {tab === 'compo' && composer && (
+        <Section title="Compos">
+          {matches.map((m, i) => (
+            <MatchRow key={m.id} match={m} index={i + 1} manager={manager} />
+          ))}
+          {matches.length === 0 && <Muted>Quand les {needed} joueurs sont inscrits, prépare le match et fais la compo.</Muted>}
           <Button
             label={!premium ? 'Compos : abonnement requis' : matches.length ? 'Préparer un autre match' : 'Préparer le match'}
             variant={matches.length || !premium ? 'ghost' : 'primary'}
             disabled={premium && confirmed.length < needed}
             onPress={newMatch}
           />
-        )}
-        {manager && premium && confirmed.length < needed && (
-          <Muted>
-            Il manque {needed - confirmed.length} inscrit{needed - confirmed.length > 1 ? 's' : ''} pour composer.
-          </Muted>
-        )}
-      </Section>
-
-      {admin && (
-        <Section title="Gestion">
-          <View style={styles.capacityRow}>
-            <Body style={{ flex: 1 }}>Places</Body>
-            <Button small variant="ghost" label="−" disabled={session.capacity <= 1} onPress={() => act(() => repo.setCapacity(session.id, session.capacity - 1))} style={styles.stepBtn} />
-            <Text style={styles.capacity}>{session.capacity}</Text>
-            <Button small variant="ghost" label="+" onPress={() => act(() => repo.setCapacity(session.id, session.capacity + 1))} style={styles.stepBtn} />
-          </View>
-          <Button
-            variant="ghost"
-            label={open ? 'Clore l’invitation' : 'Rouvrir l’invitation'}
-            onPress={() => act(() => repo.setSessionStatus(session.id, open ? 'closed' : 'open'))}
-          />
-          <Button variant="ghost" label="Supprimer ce match" onPress={confirmDelete} style={{ borderColor: colors.danger }} />
+          {premium && confirmed.length < needed && (
+            <Muted>
+              Il manque {needed - confirmed.length} inscrit{needed - confirmed.length > 1 ? 's' : ''} pour composer.
+            </Muted>
+          )}
         </Section>
       )}
+
+      {tab === 'mvp' && <MvpTab matches={matches} meId={me.id} />}
     </Screen>
+  );
+}
+
+/** Finished matches of the session: vote, follow the count, see the podium. */
+function MvpTab({ matches, meId }: { matches: Match[]; meId: ID }) {
+  const nameOf = usePlayerNames();
+  const finished = matches.filter((m) => m.status === 'finished');
+  if (finished.length === 0) {
+    return (
+      <Empty title="Pas encore de vote">
+        <Muted>Le vote MVP s’ouvre à la fin de chaque match, pour les joueurs qui l’ont joué.</Muted>
+      </Empty>
+    );
+  }
+  return (
+    <View style={{ gap: space(3) }}>
+      {finished.map((m) => {
+        const { a, b } = score(m);
+        const present = playersOf(m);
+        const over = m.votesClosed || m.voters.length >= present.length;
+        const canVote = !over && present.includes(meId) && !m.voters.includes(meId);
+        const top = mvpRanking(m)[0];
+        return (
+          <Card key={m.id} onPress={() => router.push({ pathname: '/match/[matchId]', params: { matchId: m.id } })}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space(3) }}>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Eyebrow>Match {matches.indexOf(m) + 1} · {a}–{b}</Eyebrow>
+                <Body>
+                  {over && top ? `MVP : ${nameOf(top.playerId)}` : `${m.voters.length}/${present.length} votes`}
+                </Body>
+              </View>
+              {over && top && <PlayerAvatar playerId={top.playerId} size={44} />}
+            </View>
+            {canVote && (
+              <Button
+                label="Voter pour mes 3 MVP"
+                onPress={() => router.push({ pathname: '/match/[matchId]/vote', params: { matchId: m.id } })}
+              />
+            )}
+          </Card>
+        );
+      })}
+    </View>
   );
 }
 
@@ -286,7 +350,8 @@ function MatchRow({ match, index, manager }: { match: Match; index: number; mana
       router.push({ pathname: '/match/[matchId]/live', params: { matchId: match.id } });
     });
   const status = match.status === 'draft' ? (ready ? 'Compo prête' : 'Compo en cours') : match.status === 'live' ? 'En direct' : 'Terminé';
-  const target = match.status === 'draft' ? '/match/[matchId]/compo' : match.status === 'live' ? '/match/[matchId]/live' : '/match/[matchId]';
+  const target =
+    match.status === 'draft' ? '/match/[matchId]/compo' : match.status === 'live' && manager ? '/match/[matchId]/live' : '/match/[matchId]';
   return (
     <Card onPress={() => router.push({ pathname: target, params: { matchId: match.id } })} style={styles.matchRow}>
       <View style={{ flex: 1, gap: 2 }}>
